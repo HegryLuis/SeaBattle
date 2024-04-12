@@ -1,38 +1,68 @@
-.App {
-  text-align: center;
+* {
+  margin: 0;
+  padding: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.wrap {
+  width: 80%;
+  margin: 0 auto;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+}
+
+.cell {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #aaa;
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
+.cell.ship {
+  background-color: #007bff; /* Цвет кораблей */
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.cell.hit {
+  background-color: #dc3545; /* Цвет попаданий */
+}
+
+.cell:hover {
+  background-color: #eee; /* Цвет фона при наведении курсора */
+}
+
+.board-redacting {
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.board-redacting .board {
+  margin: 30px auto;
+}
+
+.board-redacting p {
+  font-size: 16px;
+  margin: 5px 0;
+}
+
+.redacting-title {
+  color: #007bff;
+  text-align: center;
+  animation: blink 2s infinite; /* Задаем анимацию */
+}
+
+@keyframes blink {
+  25% {
+    color: #dc3545;
   }
-  to {
-    transform: rotate(360deg);
+
+  50% {
+    opacity: 0.2; /* Половина времени текст невидимый */
   }
 }
