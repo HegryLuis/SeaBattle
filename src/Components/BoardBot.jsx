@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from "react";
-import Board from "./Board";
+// import React, { useState, useEffect } from "react";
+// import Board from "./Board";
 
-const BoardBot = ({ board, handleBoard, ships, setShips }) => {
-  const [currIndex, setCurrIndex] = useState(0);
+// const BoardBot = ({ board, handleBoard, ships, setShips }) => {
+//   const [currIndex, setCurrIndex] = useState(0);
 
-  const placeShipRandomly = () => {
-    let newBoard = Array(10)
-      .fill(null)
-      .map(() => Array(10).fill(null));
-    for (let i = 0; i < ships.length; i++) {
-      let currShip = ships[i];
-      newBoard[currShip.row][currShip.col] = "S";
-    }
+//   const placeShipRandomly = () => {
+//     let newBoard = Array(10)
+//       .fill(null)
+//       .map(() => Array(10).fill(null));
+//     for (let i = 0; i < ships.length; i++) {
+//       let currShip = ships[i];
+//       newBoard[currShip.row][currShip.col] = "S";
+//     }
 
-    handleBoard(newBoard);
-  };
+//     handleBoard(newBoard);
+//   };
 
-  useEffect(() => {
-    placeShipRandomly();
-  }, [currIndex]);
+//   useEffect(() => {
+//     placeShipRandomly();
+//   }, [currIndex]);
 
-  return (
-    <div className="board">
-      <Board board={board} />
-    </div>
-  );
-};
+//   return (
+//     <div className="board">
+//       <Board board={board} />
+//     </div>
+//   );
+// };
 
-export default BoardBot;
+// export default BoardBot;

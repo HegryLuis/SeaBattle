@@ -1,68 +1,162 @@
-* {
+/* Общие стили */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #0a2a43;
+  color: white;
+  text-align: center;
   margin: 0;
   padding: 0;
 }
 
+h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
 .wrap {
-  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* Стили для форм входа */
+form {
+  background: #1a3b5d;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  width: 60%;
+}
+
+.redact__wrap {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+}
+
+.redact__wrap .board {
   margin: 0 auto;
+}
+
+input[type="text"],
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+input[type="text"] {
+  background: #224b75;
+  color: white;
+  outline: none;
+}
+
+button {
+  color: #fff;
+  background: #3ab0ff;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #1e90ff;
+}
+
+/* Поле боя */
+.boards-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.board {
+  padding: 10px;
+  background: #123;
+  border-radius: 8px;
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
 }
 
 .row {
   display: flex;
 }
 
+/* Стили для ячеек */
 .cell {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #aaa;
+  width: 35px;
+  height: 35px;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  background-color: #0f3d5f;
+  border: 1px solid #0a2a43;
+  transition: 0.2s;
+  font-size: 20px;
+  font-weight: bold;
+  user-select: none;
+}
+
+/* Подсветка при наведении */
+.cell:hover {
+  background-color: #1f507a;
   cursor: pointer;
 }
 
-.cell.ship {
-  background-color: #007bff; /* Цвет кораблей */
+/* Цветовые обозначения */
+.cell.blue {
+  background-color: #1e90ff; /* Корабль */
 }
 
-.cell.hit {
-  background-color: #dc3545; /* Цвет попаданий */
+.cell.red {
+  background-color: #ff3b3b; /* Попадание */
 }
 
-.cell:hover {
-  background-color: #eee; /* Цвет фона при наведении курсора */
+.cell.purple {
+  background-color: #7042f5; /* Промах */
 }
 
-.board-redacting {
-  display: flex;
-  text-align: center;
-  flex-direction: column;
-  justify-content: center;
-  width: 100%;
+.cell.highlight {
+  background-color: rgba(0, 255, 0, 0.5);
 }
 
-.board-redacting .board {
-  margin: 30px auto;
+/* Состояние активного выстрела */
+.active-shoot .cell:hover {
+  background-color: #ff9800;
 }
 
-.board-redacting p {
-  font-size: 16px;
-  margin: 5px 0;
+/* Отображение имени игроков */
+.nickname {
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
-.redacting-title {
-  color: #007bff;
-  text-align: center;
-  animation: blink 2s infinite; /* Задаем анимацию */
+/* Кнопка подтверждения расстановки */
+.btn-ready {
+  background-color: #27ae60;
+  font-size: 18px;
+  padding: 12px;
+  margin-top: 20px;
+  border-radius: 5px;
 }
 
-@keyframes blink {
-  25% {
-    color: #dc3545;
-  }
+.btn-ready:hover {
+  background-color: #2ecc71;
+}
 
-  50% {
-    opacity: 0.2; /* Половина времени текст невидимый */
-  }
+/* Генерация ID */
+.btn-gen {
+  background-color: #8e44ad;
+}
+
+.btn-gen:hover {
+  background-color: #9b59b6;
 }
