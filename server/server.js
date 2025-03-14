@@ -23,6 +23,7 @@ function start() {
   });
 
   function initGames(ws, gameID) {
+    console.log("Получен gameID:", gameID);
     if (!games[gameID]) {
       games[gameID] = {
         players: [],
@@ -62,7 +63,7 @@ function start() {
           if (!games[gameID]) {
             games[gameID] = {
               players: [],
-              boards: {}, // <-- Убедитесь, что объект инициализирован
+              boards: {},
             };
           }
 
@@ -70,10 +71,10 @@ function start() {
             games[gameID].players.push({ username, ws: wsClient });
           }
 
-          games[gameID].boards[username] = board.cells; // <-- Сохраняем доску корректно
+          games[gameID].boards[username] = board.cells;
 
           console.log(`Player ${username} connected to game ${gameID}`);
-          console.log("Current game state: ", JSON.stringify(games, null, 2));
+          // console.log("Current game state: ", JSON.stringify(games, null, 2));
 
           res = {
             type: "connectToPlay",
@@ -88,7 +89,7 @@ function start() {
           break;
 
         case "ready":
-          games[gameID].boards[username] = params.payload.board; // Сохраняем доску игрока
+          games[gameID].boards[username] = params.payload.board;
 
           res = {
             type: "readyToPlay",
@@ -123,24 +124,29 @@ function start() {
             return;
           }
 
-          const cell = enemyBoard[y]?.[x]; // Получаем клетку
+          const cell = enemyBoard[y]?.[x]; // Get cell
           if (!cell) {
             console.log(`Cell at (${x}, ${y}) not found!`);
             return;
           }
 
-          const isPerfectHit = cell?.mark?.name === "ship"; // Проверяем попадание
+          const isPerfectHit = cell?.mark?.name === "ship"; // Shoot check
 
           console.log(isPerfectHit ? "Hit!" : "Missed!");
 
-          games[gameID].players.forEach((client) => {
-            client.send(
-              JSON.stringify({
-                type: "isPerfectHit",
-                payload: { username, x, y, isPerfectHit },
-              })
-            );
-          });
+          isPerfectHit
+            ? (res = { type: "hit", payload: { username, x, y } })
+            : (res = { type: "miss", payload: { username, x, y } });
+
+          console.log("res -> ", res);
+          // games[gameID].players.forEach((client) => {
+          //   client.send(
+          //     JSON.stringify({
+          //       type: "isPerfectHit",
+          //       payload: { username, x, y, isPerfectHit },
+          //     })
+          //   );
+          // });
 
           // res = { type: "afterShootByMe", payload: params.payload };
           break;
@@ -153,8 +159,15 @@ function start() {
           res = { type: "logout", payload: params.payload };
           break;
       }
-
       client.send(JSON.stringify(res));
+
+      // if (client.readyState === WebSocket.OPEN) {
+      //   client.send(JSON.stringify(res));
+      // } else {
+      //   console.warn(
+      //     `WebSocket не готов к отправке сообщения: ${client.readyState}`
+      //   );
+      // }
     });
   }
 }

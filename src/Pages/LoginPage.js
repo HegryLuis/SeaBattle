@@ -1,20 +1,27 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { context } from "../context";
 import RedactComponent from "../Components/RedactComponent";
 
-const wss = new WebSocket("ws://localhost:4000");
-
 const LoginPage = () => {
   const [invitationGame, setInvitationGame] = useState();
   const [shipsPlaced, setShipsPlaced] = useState(false);
-  const { nickname, setNickname, gameID, setGameID, setEnemyName, myBoard } =
-    useContext(context);
+  const {
+    nickname,
+    setNickname,
+    gameID,
+    setGameID,
+    setEnemyName,
+    myBoard,
+    wss,
+  } = useContext(context);
 
   const navigate = useNavigate();
 
   const startPlay = (e) => {
     e.preventDefault();
+
+    console.log("Start play function");
 
     if (!nickname || !gameID) {
       alert("Error! You didn`t enter a name or a game ID");
@@ -25,6 +32,8 @@ const LoginPage = () => {
       alert("Your ships aren`t ready!");
     }
 
+    console.log("Event connect");
+
     wss.send(
       JSON.stringify({
         event: "connect",
@@ -32,23 +41,68 @@ const LoginPage = () => {
       })
     );
 
-    wss.onmessage = async (res) => {
+    wss.onmessage = (res) => {
       const { type, payload } = JSON.parse(res.data);
+      console.log("Received info from server");
 
-      if (type === "connectToPlay" && payload.success) {
-        if (payload) {
-          console.log(payload);
-        }
+      if (type === "connectToPlay" && payload?.success) {
+        console.log(payload);
 
         if (payload.enemyName) {
           localStorage.nickname = nickname;
           setEnemyName(payload.enemyName);
-          navigate("/game/" + gameID);
+
+          // Закрытие WebSocket после успешного подключения (если нужно)
+
+          if (gameID) {
+            console.log("Navigating to /game/", gameID);
+            navigate("/game/" + gameID);
+          } else {
+            console.error("Невалидный gameID");
+          }
         } else {
           alert("Waiting for enemy");
         }
       }
     };
+
+    // // Проверка, что WebSocket открыт перед отправкой
+    // if (wss.readyState === WebSocket.OPEN) {
+    // } else {
+    //   alert("WebSocket is not connected yet.");
+    // }
+
+    // wss.onmessage = async (res) => {
+    //   // const { type, payload } = JSON.parse(res.data);
+    //   let type, payload;
+
+    //   try {
+    //     if (res.data instanceof Blob) {
+    //       const textData = await res.data.text(); // Преобразуем Blob в текст
+    //       console.log("Received Blob data:", textData);
+    //       ({ type, payload } = JSON.parse(textData)); // Теперь можно парсить
+    //     } else {
+    //       ({ type, payload } = JSON.parse(res.data));
+    //     }
+    //   } catch (error) {
+    //     console.error("Error parsing message:", error, res.data);
+    //     return;
+    //   }
+
+    //   if (type === "connectToPlay" && payload.success) {
+    //     if (payload) {
+    //       console.log(payload);
+    //     }
+
+    //     if (payload.enemyName) {
+    //       localStorage.nickname = nickname;
+    //       setEnemyName(payload.enemyName);
+    //       navigate("/game/" + gameID);
+    //     } else {
+    //       alert("Waiting for enemy");
+    //     }
+    //   }
+    // };
   };
 
   return (

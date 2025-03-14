@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import { Board } from "./Models/Board";
 
 export const context = createContext();
@@ -8,6 +8,21 @@ export const Provider = ({ children }) => {
   const [gameID, setGameID] = useState("");
   const [nickname, setNickname] = useState("");
   const [enemyName, setEnemyName] = useState("");
+  const [wss, setWss] = useState(null); // Здесь храните WebSocket
+
+  useEffect(() => {
+    // Создаем WebSocket один раз при монтировании компонента
+    const socket = new WebSocket("ws://localhost:4000");
+    setWss(socket);
+
+    // Закрываем WebSocket при размонтировании
+    return () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+      // socket.close();
+    };
+  }, []);
 
   const ships = [
     { x: 0, y: 0, size: 4, orientation: "horizontal" },
@@ -29,6 +44,7 @@ export const Provider = ({ children }) => {
         ships,
         enemyName,
         setEnemyName,
+        wss,
       }}
     >
       {children}

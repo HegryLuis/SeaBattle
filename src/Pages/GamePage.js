@@ -1,16 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Board } from "../Models/Board";
 import BoardComponent from "../Components/BoardComponent";
 import GameState from "../Components/GameState";
 import { context } from "../context";
 import { Ship } from "../marks/Ship";
 
-const wss = new WebSocket("ws://localhost:4000");
-
 const GamePage = () => {
   const { gameID } = useParams();
-  const { myBoard, setMyBoard, nickname, enemyName } = useContext(context);
+  const { myBoard, setMyBoard, nickname, enemyName, wss } = useContext(context);
+  const navigate = useNavigate();
 
   const [enemyBoard, setEnemyBoard] = useState(new Board());
   const [canShoot, setCanShoot] = useState(true);
@@ -20,12 +19,23 @@ const GamePage = () => {
     if (!isMyTurn) return;
     console.log("shoot");
 
-    wss.send(
-      JSON.stringify({
-        event: "shoot",
-        payload: { username: nickname, x, y, gameID },
-      })
-    );
+    if (wss.readyState === WebSocket.OPEN) {
+      wss.send(
+        JSON.stringify({
+          event: "shoot",
+          payload: { username: nickname, x, y, gameID },
+        })
+      );
+    } else {
+      console.error("WebSocket не открыт. Состояние:", wss.readyState);
+    }
+
+    // wss.send(
+    //   JSON.stringify({
+    //     event: "shoot",
+    //     payload: { username: nickname, x, y, gameID },
+    //   })
+    // );
   }
 
   function ready() {
@@ -70,6 +80,16 @@ const GamePage = () => {
         }
         break;
 
+      case "hit":
+      case "miss":
+        // Обрабатываем выстрелы
+        if (payload.username !== localStorage.nickname) {
+          const isHit = type === "hit";
+          changeBoardAfterShoot(myBoard, setMyBoard, x, y, isHit);
+          setIsMyTurn(true); // Ваш ход после выстрела
+        }
+        break;
+
       case "afterShootByMe":
         console.log("afterShootByMe");
         if (username !== localStorage.nickname) {
@@ -90,6 +110,7 @@ const GamePage = () => {
         break;
 
       case "isPerfectHit":
+        console.log("is Perfect Hit");
         console.log(`Received shoot\n data => ${response.data} `);
         // if (username === localStorage.nickname) {
         //   changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, isPerfectHit);
@@ -99,6 +120,7 @@ const GamePage = () => {
         break;
 
       default:
+        console.log("default: ", response.data);
         break;
     }
   };
@@ -134,6 +156,9 @@ const GamePage = () => {
       </div>
 
       <GameState canShoot={canShoot} ready={ready} />
+      {/* <button onClick={() => handleShoot(3, 4)}>Выстрелить (3,4)</button> */}
+
+      <button onClick={() => navigate("/")}>Log out</button>
     </div>
   );
 };

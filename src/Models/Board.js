@@ -27,18 +27,6 @@ export class Board {
     };
   }
 
-  // serialize() {
-  //   return {
-  //     cells: this.cells.map((row) =>
-  //       row.map((cell) => ({
-  //         x: cell.x,
-  //         y: cell.y,
-  //         mark: cell.mark ? cell.mark : null,
-  //       }))
-  //     ),
-  // };
-  // }
-
   getCopyBoard() {
     const newBoard = new Board();
     newBoard.cells = this.cells.map((row) =>
