@@ -1,6 +1,6 @@
 import React from "react";
 
-const GameState = ({ canShoot = false, ready }) => {
+const GameState = ({ canShoot }) => {
   return (
     <div>
       {canShoot ? (

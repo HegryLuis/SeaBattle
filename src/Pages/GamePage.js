@@ -4,6 +4,7 @@ import { Board } from "../Models/Board";
 import BoardComponent from "../Components/BoardComponent";
 import GameState from "../Components/GameState";
 import { context } from "../context";
+import { Ship } from "../marks/Ship";
 
 const wss = new WebSocket("ws://localhost:4000");
 
@@ -13,13 +14,12 @@ const GamePage = () => {
 
   const [enemyBoard, setEnemyBoard] = useState(new Board());
   const [canShoot, setCanShoot] = useState(true);
-
-  useEffect(() => {
-    console.log(`My board => ${myBoard}, Nickname => ${nickname}`);
-  }, []);
+  const [isMyTurn, setIsMyTurn] = useState(true);
 
   function shoot(x, y) {
+    if (!isMyTurn) return;
     console.log("shoot");
+
     wss.send(
       JSON.stringify({
         event: "shoot",
@@ -32,11 +32,13 @@ const GamePage = () => {
     wss.send(
       JSON.stringify({
         event: "ready",
-        payload: { username: nickname, gameID },
+        payload: {
+          username: localStorage.nickname,
+          gameID,
+          board: myBoard.cells,
+        },
       })
     );
-
-    // setShipsReady(true);
   }
 
   function restart() {
@@ -48,6 +50,7 @@ const GamePage = () => {
 
     setMyBoard(newMyBoard);
     setEnemyBoard(newEnemyBoard);
+    setIsMyTurn(false);
   }
 
   function changeBoardAfterShoot(board, setBoard, x, y, isPerfectHit) {
@@ -56,20 +59,21 @@ const GamePage = () => {
     setBoard(newBoard);
   }
 
-  wss.onmessage = function (responce) {
-    const { type, payload } = JSON.parse(responce.data);
-    const { username, x, y, canStart, enemyName, success } = payload;
+  wss.onmessage = function (response) {
+    const { type, payload } = JSON.parse(response.data);
+    const { username, x, y, canStart, isPerfectHit } = payload;
 
     switch (type) {
       case "readyToPlay":
-        if (payload.username === nickname && canStart) {
-          setCanShoot(true);
+        if (payload.username === localStorage.nickname && canStart) {
+          setIsMyTurn(true);
         }
         break;
 
       case "afterShootByMe":
-        if (username !== nickname) {
-          const isPerfectHit = myBoard.cells[y][x].mark?.name === "ship";
+        console.log("afterShootByMe");
+        if (username !== localStorage.nickname) {
+          const isPerfectHit = myBoard.cells[y][x]?.mark instanceof Ship;
           changeBoardAfterShoot(myBoard, setMyBoard, x, y, isPerfectHit);
           wss.send(
             JSON.stringify({
@@ -79,23 +83,18 @@ const GamePage = () => {
           );
 
           if (!isPerfectHit) {
-            setCanShoot(true);
+            setIsMyTurn(true);
           }
         }
 
         break;
 
       case "isPerfectHit":
-        if (username === nickname) {
-          changeBoardAfterShoot(
-            enemyBoard,
-            setEnemyBoard,
-            x,
-            y,
-            payload.isPerfectHit
-          );
-          payload.isPerfectHit ? setCanShoot(true) : setCanShoot(false);
-        }
+        console.log(`Received shoot\n data => ${response.data} `);
+        // if (username === localStorage.nickname) {
+        //   changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, isPerfectHit);
+        //   setIsMyTurn(!isPerfectHit);
+        // }
 
         break;
 
@@ -121,7 +120,9 @@ const GamePage = () => {
 
         {
           <div>
-            <p className="nickname">{enemyName || "Unknown enemy"}</p>
+            <p className="nickname">
+              {typeof enemyName === "string" ? enemyName : "Unknown enemy"}
+            </p>
             <BoardComponent
               board={enemyBoard}
               setBoard={setEnemyBoard}

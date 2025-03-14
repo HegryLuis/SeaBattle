@@ -8,7 +8,7 @@ const wss = new WebSocket("ws://localhost:4000");
 const LoginPage = () => {
   const [invitationGame, setInvitationGame] = useState();
   const [shipsPlaced, setShipsPlaced] = useState(false);
-  const { nickname, setNickname, gameID, setGameID, setEnemyName } =
+  const { nickname, setNickname, gameID, setGameID, setEnemyName, myBoard } =
     useContext(context);
 
   const navigate = useNavigate();
@@ -28,11 +28,11 @@ const LoginPage = () => {
     wss.send(
       JSON.stringify({
         event: "connect",
-        payload: { username: nickname, gameID },
+        payload: { username: nickname, gameID, board: myBoard.serialize() },
       })
     );
 
-    wss.onmessage = (res) => {
+    wss.onmessage = async (res) => {
       const { type, payload } = JSON.parse(res.data);
 
       if (type === "connectToPlay" && payload.success) {

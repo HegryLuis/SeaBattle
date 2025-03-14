@@ -6,4 +6,12 @@ export class Cell {
     this.mark = mark;
     this.id = Math.random();
   }
+
+  serialize() {
+    return {
+      x: this.x,
+      y: this.y,
+      mark: this.mark ? this.mark.serialize() : null,
+    };
+  }
 }

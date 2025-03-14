@@ -21,9 +21,29 @@ export class Board {
     }
   }
 
+  serialize() {
+    return {
+      cells: this.cells.map((row) => row.map((cell) => cell.serialize())),
+    };
+  }
+
+  // serialize() {
+  //   return {
+  //     cells: this.cells.map((row) =>
+  //       row.map((cell) => ({
+  //         x: cell.x,
+  //         y: cell.y,
+  //         mark: cell.mark ? cell.mark : null,
+  //       }))
+  //     ),
+  // };
+  // }
+
   getCopyBoard() {
     const newBoard = new Board();
-    newBoard.cells = this.cells;
+    newBoard.cells = this.cells.map((row) =>
+      row.map((cell) => new Cell(newBoard, cell.x, cell.y, cell.mark))
+    );
     return newBoard;
   }
 
@@ -36,7 +56,7 @@ export class Board {
   }
 
   getOccupied(x, y) {
-    return this.cells[x][y].mark === "Ship";
+    return this.cells[x][y].mark instanceof Ship;
   }
 
   addShip(x, y) {
@@ -49,5 +69,32 @@ export class Board {
 
   addDamage(x, y) {
     new Damage(this.getCells(x, y));
+  }
+
+  setCellsFromServer(serverData) {
+    this.initCells();
+
+    serverData.cells.forEach((row) => {
+      row.forEach((cell) => {
+        if (cell.mark) {
+          switch (cell.mark.type) {
+            case "Ship":
+              this.addShip(cell.x, cell.y);
+              break;
+
+            case "Miss":
+              this.addMiss(cell.x, cell.y);
+              break;
+
+            case "Damage":
+              this.addDamage(cell.x, cell.y);
+              break;
+
+            default:
+              break;
+          }
+        }
+      });
+    });
   }
 }

@@ -4,22 +4,13 @@ import CellComponent from "./CellComponent";
 const BoardComponent = ({
   board,
   setBoard,
-  shipsReady,
   isMyBoard,
   canShoot,
   shoot,
   highlightCells = [],
 }) => {
-  const boardClasses = ["board"];
-
-  if (canShoot) {
-    boardClasses.push("active-shoot");
-  }
-
   function addMark(x, y) {
-    if (!shipsReady && isMyBoard) {
-      board.addShip(x, y);
-    } else if (canShoot && !isMyBoard) {
+    if (!isMyBoard && canShoot) {
       shoot(x, y);
     }
 
@@ -27,13 +18,11 @@ const BoardComponent = ({
   }
 
   function updateBoard() {
-    const newBoard = board.getCopyBoard();
-
-    setBoard(newBoard);
+    setBoard(board.getCopyBoard());
   }
 
   return (
-    <div className={boardClasses.join(" ")}>
+    <div className={`board ${canShoot ? "active-shoot " : ""}`}>
       {board.cells.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((cell) => {

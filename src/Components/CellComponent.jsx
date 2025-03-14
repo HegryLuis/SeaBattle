@@ -1,6 +1,6 @@
 import React from "react";
 
-const CellComponent = ({ cell, isHighlighted }) => {
+const CellComponent = ({ cell, isHighlighted, addMark }) => {
   const cellClasses = ["cell"];
   if (cell.mark) cellClasses.push(cell.mark.color);
   if (isHighlighted) cellClasses.push("highlight");
@@ -10,9 +10,9 @@ const CellComponent = ({ cell, isHighlighted }) => {
   return (
     <div
       className={cellClasses.join(" ")}
-      // onClick={() => addMark(cell.x, cell.y)}
+      onClick={() => addMark(cell.x, cell.y)}
     >
-      {cell?.mark?.name === "miss" ? <span>&#183;</span> : <></>}
+      {cell?.mark?.name === "miss" ? <span>•</span> : ""}
     </div>
   );
 };

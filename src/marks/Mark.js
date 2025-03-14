@@ -7,4 +7,13 @@ export class Mark {
     this.id = Math.random();
     this.name = "";
   }
+
+  serialize() {
+    return {
+      name: this.name,
+      logo: this.logo,
+      color: this.color,
+      id: this.id,
+    };
+  }
 }
