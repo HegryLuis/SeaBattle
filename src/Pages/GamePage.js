@@ -12,8 +12,13 @@ const GamePage = () => {
   const navigate = useNavigate();
 
   const [enemyBoard, setEnemyBoard] = useState(new Board());
-  const [canShoot, setCanShoot] = useState(true);
   const [isMyTurn, setIsMyTurn] = useState(true);
+
+  useEffect(() => {
+    console.log(
+      `Nickname = ${nickname}, enemyName = ${enemyName} is useEffect`
+    );
+  }, [nickname, enemyName]);
 
   function shoot(x, y) {
     if (!isMyTurn) return;
@@ -39,6 +44,7 @@ const GamePage = () => {
   }
 
   function ready() {
+    console.log("Function ready");
     wss.send(
       JSON.stringify({
         event: "ready",
@@ -71,22 +77,36 @@ const GamePage = () => {
 
   wss.onmessage = function (response) {
     const { type, payload } = JSON.parse(response.data);
-    const { username, x, y, canStart, isPerfectHit } = payload;
+    const { username, x, y } = payload;
 
     switch (type) {
-      case "readyToPlay":
-        if (payload.username === localStorage.nickname && canStart) {
-          setIsMyTurn(true);
+      // case "readyToPlay":
+      //   if (payload.username === localStorage.nickname) {
+      //     setIsMyTurn(true);
+      //   }
+      //   break;
+
+      case "hit":
+        if (payload.username !== localStorage.nickname) {
+          // Враг попал по мне
+          changeBoardAfterShoot(myBoard, setMyBoard, x, y, true);
+          setIsMyTurn(false); // Враг попал — он стреляет дальше
+        } else {
+          // Я попал по врагу
+          changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, true);
+          setIsMyTurn(true); // Попал — cтреляю снова
         }
         break;
 
-      case "hit":
       case "miss":
-        // Обрабатываем выстрелы
         if (payload.username !== localStorage.nickname) {
-          const isHit = type === "hit";
-          changeBoardAfterShoot(myBoard, setMyBoard, x, y, isHit);
-          setIsMyTurn(true); // Ваш ход после выстрела
+          // Враг промахнулся
+          changeBoardAfterShoot(myBoard, setMyBoard, x, y, false);
+          setIsMyTurn(false); // После промаха врага — мой ход
+        } else {
+          // Я промахнулся
+          changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, false);
+          setIsMyTurn(false); // Промахнулся — передаю ход врагу
         }
         break;
 
@@ -106,16 +126,6 @@ const GamePage = () => {
             setIsMyTurn(true);
           }
         }
-
-        break;
-
-      case "isPerfectHit":
-        console.log("is Perfect Hit");
-        console.log(`Received shoot\n data => ${response.data} `);
-        // if (username === localStorage.nickname) {
-        //   changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, isPerfectHit);
-        //   setIsMyTurn(!isPerfectHit);
-        // }
 
         break;
 
@@ -143,20 +153,20 @@ const GamePage = () => {
         {
           <div>
             <p className="nickname">
-              {typeof enemyName === "string" ? enemyName : "Unknown enemy"}
+              {enemyName}
+              {/* {typeof enemyName === "string" ? enemyName : "Unknown enemy"} */}
             </p>
             <BoardComponent
               board={enemyBoard}
               setBoard={setEnemyBoard}
-              canShoot={canShoot}
+              canShoot={true}
               shoot={shoot}
             />
           </div>
         }
       </div>
 
-      <GameState canShoot={canShoot} ready={ready} />
-      {/* <button onClick={() => handleShoot(3, 4)}>Выстрелить (3,4)</button> */}
+      <GameState isMyTurn={isMyTurn} ready={ready} />
 
       <button onClick={() => navigate("/")}>Log out</button>
     </div>

@@ -20,6 +20,19 @@ function start() {
 
       broadcast(req);
     });
+
+    wsClient.on("close", () => {
+      Object.keys(games).forEach((gameID) => {
+        games[gameID].players = games[gameID].players.filter(
+          (p) => p.ws !== wsClient
+        );
+
+        if (games[gameID].players.length === 0) {
+          delete games[gameID]; // Удаляем пустую игру
+          console.log(`Game ${gameID} deleted`);
+        }
+      });
+    });
   });
 
   function initGames(ws, gameID) {
@@ -31,30 +44,50 @@ function start() {
       };
     }
 
+    if (!games[gameID].players.find((p) => p.username === ws.username)) {
+      games[gameID].players.push({ username: ws.username, ws: ws });
+    }
     // if (!games[gameID]) games[gameID] = [ws];
-    else if (games[gameID].players.length < 2) games[gameID].players.push(ws);
+    // else if (games[gameID].players.length < 2) games[gameID].players.push(ws);
 
     if (games[gameID].players.length === 2) {
-      games[gameID].players.forEach((player) => {
-        player.send(
-          JSON.stringify({
-            type: "connectToPlay",
-            payload: {
-              success: true,
-              enemyName: games[gameID].players.find(
-                (w) => w !== player?.username
-              ),
-            },
-          })
-        );
-      });
+      const [player1, player2] = games[gameID].players;
+
+      console.log(
+        `Sending to Player 1: ${player1.username} vs ${player2.username}`
+      );
+      player1.ws.send(
+        JSON.stringify({
+          type: "connectToPlay",
+          payload: {
+            success: true,
+            enemyName: player2.username,
+            nickname: player1.username,
+            isMyTurn: true,
+          },
+        })
+      );
+
+      console.log(
+        `Sending to Player 2: ${player2.username} vs ${player1.username}`
+      );
+      player2.ws.send(
+        JSON.stringify({
+          type: "connectToPlay",
+          payload: {
+            success: true,
+            enemyName: player1.username,
+            nickname: player2.username,
+            isMyTurn: false,
+          },
+        })
+      );
     }
   }
 
   function broadcast(params, wsClient) {
     let res;
 
-    // const { username, gameID } = params.payload;
     const { username, gameID, board } = params.payload;
 
     games[gameID].players.forEach((client) => {
@@ -74,7 +107,6 @@ function start() {
           games[gameID].boards[username] = board.cells;
 
           console.log(`Player ${username} connected to game ${gameID}`);
-          // console.log("Current game state: ", JSON.stringify(games, null, 2));
 
           res = {
             type: "connectToPlay",
@@ -139,35 +171,22 @@ function start() {
             : (res = { type: "miss", payload: { username, x, y } });
 
           console.log("res -> ", res);
-          // games[gameID].players.forEach((client) => {
-          //   client.send(
-          //     JSON.stringify({
-          //       type: "isPerfectHit",
-          //       payload: { username, x, y, isPerfectHit },
-          //     })
-          //   );
-          // });
-
-          // res = { type: "afterShootByMe", payload: params.payload };
           break;
-
-        // case "checkShoot":
-        //   res = { type: "isPerfectHit", payload: params.payload };
-        //   break;
 
         default:
           res = { type: "logout", payload: params.payload };
           break;
       }
-      client.send(JSON.stringify(res));
 
-      // if (client.readyState === WebSocket.OPEN) {
-      //   client.send(JSON.stringify(res));
-      // } else {
-      //   console.warn(
-      //     `WebSocket не готов к отправке сообщения: ${client.readyState}`
-      //   );
-      // }
+      games[gameID].players.forEach((client) => {
+        if (typeof client.ws.send !== "function") {
+          console.error("client.ws не является WebSocket:", client);
+        } else {
+          client.ws.send(JSON.stringify(res));
+        }
+      });
+
+      // client.send(JSON.stringify(res));
     });
   }
 }

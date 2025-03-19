@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { context } from "../context";
 import RedactComponent from "../Components/RedactComponent";
@@ -43,16 +43,14 @@ const LoginPage = () => {
 
     wss.onmessage = (res) => {
       const { type, payload } = JSON.parse(res.data);
-      console.log("Received info from server");
+      console.log("Received info from server : ", payload);
 
       if (type === "connectToPlay" && payload?.success) {
         console.log(payload);
 
         if (payload.enemyName) {
-          localStorage.nickname = nickname;
           setEnemyName(payload.enemyName);
-
-          // Закрытие WebSocket после успешного подключения (если нужно)
+          localStorage.nickname = nickname;
 
           if (gameID) {
             console.log("Navigating to /game/", gameID);
@@ -65,44 +63,6 @@ const LoginPage = () => {
         }
       }
     };
-
-    // // Проверка, что WebSocket открыт перед отправкой
-    // if (wss.readyState === WebSocket.OPEN) {
-    // } else {
-    //   alert("WebSocket is not connected yet.");
-    // }
-
-    // wss.onmessage = async (res) => {
-    //   // const { type, payload } = JSON.parse(res.data);
-    //   let type, payload;
-
-    //   try {
-    //     if (res.data instanceof Blob) {
-    //       const textData = await res.data.text(); // Преобразуем Blob в текст
-    //       console.log("Received Blob data:", textData);
-    //       ({ type, payload } = JSON.parse(textData)); // Теперь можно парсить
-    //     } else {
-    //       ({ type, payload } = JSON.parse(res.data));
-    //     }
-    //   } catch (error) {
-    //     console.error("Error parsing message:", error, res.data);
-    //     return;
-    //   }
-
-    //   if (type === "connectToPlay" && payload.success) {
-    //     if (payload) {
-    //       console.log(payload);
-    //     }
-
-    //     if (payload.enemyName) {
-    //       localStorage.nickname = nickname;
-    //       setEnemyName(payload.enemyName);
-    //       navigate("/game/" + gameID);
-    //     } else {
-    //       alert("Waiting for enemy");
-    //     }
-    //   }
-    // };
   };
 
   return (

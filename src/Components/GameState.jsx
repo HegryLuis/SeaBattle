@@ -1,9 +1,9 @@
 import React from "react";
 
-const GameState = ({ canShoot }) => {
+const GameState = ({ isMyTurn }) => {
   return (
     <div>
-      {canShoot ? (
+      {isMyTurn ? (
         <p>
           What are your waiting for?
           <br />
