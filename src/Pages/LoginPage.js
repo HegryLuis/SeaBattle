@@ -14,14 +14,14 @@ const LoginPage = () => {
     setEnemyName,
     myBoard,
     wss,
+    setIsMyTurn,
+    enemyName,
   } = useContext(context);
 
   const navigate = useNavigate();
 
   const startPlay = (e) => {
     e.preventDefault();
-
-    console.log("Start play function");
 
     if (!nickname || !gameID) {
       alert("Error! You didn`t enter a name or a game ID");
@@ -31,8 +31,6 @@ const LoginPage = () => {
     if (!shipsPlaced) {
       alert("Your ships aren`t ready!");
     }
-
-    console.log("Event connect");
 
     wss.send(
       JSON.stringify({
@@ -46,17 +44,19 @@ const LoginPage = () => {
       console.log("Received info from server : ", payload);
 
       if (type === "connectToPlay" && payload?.success) {
-        console.log(payload);
-
-        if (payload.enemyName) {
+        if (
+          payload.enemyName &&
+          payload.enemyName !== enemyName &&
+          nickname !== payload.enemyName
+        ) {
           setEnemyName(payload.enemyName);
+          setIsMyTurn(payload.isMyTurn);
           localStorage.nickname = nickname;
 
           if (gameID) {
-            console.log("Navigating to /game/", gameID);
             navigate("/game/" + gameID);
           } else {
-            console.error("Невалидный gameID");
+            console.error("Invalid gameID");
           }
         } else {
           alert("Waiting for enemy");

@@ -14,7 +14,7 @@ function start() {
 
       if (req.event == "connect") {
         wsClient.username = req.payload.username;
-        console.log("req = ", req);
+        // console.log("req = ", req);
         initGames(wsClient, req.payload.gameID);
       }
 
@@ -36,7 +36,7 @@ function start() {
   });
 
   function initGames(ws, gameID) {
-    console.log("Получен gameID:", gameID);
+    //console.log("Получен gameID:", gameID);
     if (!games[gameID]) {
       games[gameID] = {
         players: [],
@@ -53,9 +53,9 @@ function start() {
     if (games[gameID].players.length === 2) {
       const [player1, player2] = games[gameID].players;
 
-      console.log(
-        `Sending to Player 1: ${player1.username} vs ${player2.username}`
-      );
+      console.log(`Player1: ${player1.username}, Enemy: ${player2.username}`);
+      console.log(`Player2: ${player2.username}, Enemy: ${player1.username}`);
+
       player1.ws.send(
         JSON.stringify({
           type: "connectToPlay",
@@ -68,9 +68,6 @@ function start() {
         })
       );
 
-      console.log(
-        `Sending to Player 2: ${player2.username} vs ${player1.username}`
-      );
       player2.ws.send(
         JSON.stringify({
           type: "connectToPlay",
@@ -82,6 +79,8 @@ function start() {
           },
         })
       );
+
+      games[gameID].turn = player1.username; // Збережемо, хто ходить
     }
   }
 
@@ -106,7 +105,7 @@ function start() {
 
           games[gameID].boards[username] = board.cells;
 
-          console.log(`Player ${username} connected to game ${gameID}`);
+          //console.log(`Player ${username} connected to game ${gameID}`);
 
           res = {
             type: "connectToPlay",
@@ -116,6 +115,7 @@ function start() {
                 (p) => p.username !== username
               )?.username,
               username: username,
+              isMyTurn: games[gameID].players[0].username === username,
             },
           };
           break;
@@ -133,12 +133,12 @@ function start() {
           break;
 
         case "shoot":
-          console.log("Shoot received from", username);
-
           if (!games[gameID]) {
             console.log(`Game ${gameID} not found!`);
             return;
           }
+
+          console.log("shoot");
 
           const enemy = games[gameID].players.find(
             (player) => player.username !== username
@@ -157,20 +157,50 @@ function start() {
           }
 
           const cell = enemyBoard[y]?.[x]; // Get cell
+
           if (!cell) {
             console.log(`Cell at (${x}, ${y}) not found!`);
             return;
           }
 
-          const isPerfectHit = cell?.mark?.name === "ship"; // Shoot check
+          if (!cell.mark) {
+            console.log(
+              `Cell at (${x}, ${y}) has no mark! Creating default mark.`
+            );
+            cell.mark = { name: "empty" }; // Добавляем пустую метку
+          }
 
-          console.log(isPerfectHit ? "Hit!" : "Missed!");
+          const isPerfectHit =
+            cell?.mark?.name === "ship" || cell?.mark?.name === "hit"; // Shoot check
 
-          isPerfectHit
-            ? (res = { type: "hit", payload: { username, x, y } })
-            : (res = { type: "miss", payload: { username, x, y } });
+          if (cell.mark) {
+            cell.mark.name = isPerfectHit ? "hit" : "miss";
+          }
 
-          console.log("res -> ", res);
+          if (isPerfectHit) {
+            cell.mark.name = "hit"; // Помечаем клетку как "попадание"
+          } else {
+            cell.mark.name = "miss"; // Помечаем клетку как "промах"
+          }
+
+          res = {
+            type: isPerfectHit ? "hit" : "miss",
+            payload: { username, x, y },
+          };
+
+          if (!isPerfectHit) {
+            games[gameID].turn = enemy.username; // Оновлюємо, хто має ходит
+
+            games[gameID].players.forEach((player) => {
+              player.ws.send(
+                JSON.stringify({
+                  type: "changeTurn",
+                  payload: { nextTurn: enemy.username },
+                })
+              );
+            });
+          }
+
           break;
 
         default:
@@ -182,6 +212,7 @@ function start() {
         if (typeof client.ws.send !== "function") {
           console.error("client.ws не является WebSocket:", client);
         } else {
+          console.log(res);
           client.ws.send(JSON.stringify(res));
         }
       });

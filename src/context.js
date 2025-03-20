@@ -9,6 +9,7 @@ export const Provider = ({ children }) => {
   const [nickname, setNickname] = useState("");
   const [enemyName, setEnemyName] = useState("");
   const [wss, setWss] = useState(null); // Здесь храните WebSocket
+  const [isMyTurn, setIsMyTurn] = useState();
 
   useEffect(() => {
     // Создаем WebSocket один раз при монтировании компонента
@@ -45,6 +46,8 @@ export const Provider = ({ children }) => {
         enemyName,
         setEnemyName,
         wss,
+        isMyTurn,
+        setIsMyTurn,
       }}
     >
       {children}

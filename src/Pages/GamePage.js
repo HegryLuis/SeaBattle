@@ -8,11 +8,18 @@ import { Ship } from "../marks/Ship";
 
 const GamePage = () => {
   const { gameID } = useParams();
-  const { myBoard, setMyBoard, nickname, enemyName, wss } = useContext(context);
+  const {
+    myBoard,
+    setMyBoard,
+    nickname,
+    enemyName,
+    wss,
+    isMyTurn,
+    setIsMyTurn,
+  } = useContext(context);
   const navigate = useNavigate();
 
   const [enemyBoard, setEnemyBoard] = useState(new Board());
-  const [isMyTurn, setIsMyTurn] = useState(true);
 
   useEffect(() => {
     console.log(
@@ -90,11 +97,9 @@ const GamePage = () => {
         if (payload.username !== localStorage.nickname) {
           // Враг попал по мне
           changeBoardAfterShoot(myBoard, setMyBoard, x, y, true);
-          setIsMyTurn(false); // Враг попал — он стреляет дальше
         } else {
           // Я попал по врагу
           changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, true);
-          setIsMyTurn(true); // Попал — cтреляю снова
         }
         break;
 
@@ -102,11 +107,9 @@ const GamePage = () => {
         if (payload.username !== localStorage.nickname) {
           // Враг промахнулся
           changeBoardAfterShoot(myBoard, setMyBoard, x, y, false);
-          setIsMyTurn(false); // После промаха врага — мой ход
         } else {
           // Я промахнулся
           changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, false);
-          setIsMyTurn(false); // Промахнулся — передаю ход врагу
         }
         break;
 
@@ -121,12 +124,17 @@ const GamePage = () => {
               payload: { ...payload, isPerfectHit },
             })
           );
-
-          if (!isPerfectHit) {
-            setIsMyTurn(true);
-          }
         }
 
+        break;
+
+      case "changeTurn":
+        setIsMyTurn(payload.nextTurn === nickname);
+
+        break;
+
+      case "connectToPlay":
+        console.log("connect");
         break;
 
       default:
