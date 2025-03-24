@@ -4,7 +4,6 @@ import { Board } from "../Models/Board";
 import BoardComponent from "../Components/BoardComponent";
 import GameState from "../Components/GameState";
 import { context } from "../context";
-import { Ship } from "../marks/Ship";
 
 const GamePage = () => {
   const { gameID } = useParams();
@@ -20,16 +19,15 @@ const GamePage = () => {
   const navigate = useNavigate();
 
   const [enemyBoard, setEnemyBoard] = useState(new Board());
+  // History move: [{moveID, player, x, y, hit/miss}, {} ...]
+  const [historyMove, setHistoryMove] = useState([]);
 
-  useEffect(() => {
-    console.log(
-      `Nickname = ${nickname}, enemyName = ${enemyName} is useEffect`
-    );
-  }, [nickname, enemyName]);
+  // Victory -> player`s name
+  // если кораблей больше нет, то сервер должен отправить имя победителя и закончить игру
+  const [victory, setVictory] = useState(null);
 
   function shoot(x, y) {
-    if (!isMyTurn) return;
-    console.log("shoot");
+    if (!isMyTurn) return; // надо добавить вывод модального блока
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -41,13 +39,6 @@ const GamePage = () => {
     } else {
       console.error("WebSocket не открыт. Состояние:", wss.readyState);
     }
-
-    // wss.send(
-    //   JSON.stringify({
-    //     event: "shoot",
-    //     payload: { username: nickname, x, y, gameID },
-    //   })
-    // );
   }
 
   function ready() {
@@ -87,14 +78,8 @@ const GamePage = () => {
     const { username, x, y } = payload;
 
     switch (type) {
-      // case "readyToPlay":
-      //   if (payload.username === localStorage.nickname) {
-      //     setIsMyTurn(true);
-      //   }
-      //   break;
-
       case "hit":
-        if (payload.username !== localStorage.nickname) {
+        if (username !== localStorage.nickname) {
           // Враг попал по мне
           changeBoardAfterShoot(myBoard, setMyBoard, x, y, true);
         } else {
@@ -104,7 +89,7 @@ const GamePage = () => {
         break;
 
       case "miss":
-        if (payload.username !== localStorage.nickname) {
+        if (username !== localStorage.nickname) {
           // Враг промахнулся
           changeBoardAfterShoot(myBoard, setMyBoard, x, y, false);
         } else {
@@ -113,28 +98,16 @@ const GamePage = () => {
         }
         break;
 
-      case "afterShootByMe":
-        console.log("afterShootByMe");
-        if (username !== localStorage.nickname) {
-          const isPerfectHit = myBoard.cells[y][x]?.mark instanceof Ship;
-          changeBoardAfterShoot(myBoard, setMyBoard, x, y, isPerfectHit);
-          wss.send(
-            JSON.stringify({
-              event: "checkShoot",
-              payload: { ...payload, isPerfectHit },
-            })
-          );
-        }
-
-        break;
-
       case "changeTurn":
         setIsMyTurn(payload.nextTurn === nickname);
 
         break;
 
       case "connectToPlay":
-        console.log("connect");
+        break;
+
+      case "victory":
+        setVictory(payload.winner);
         break;
 
       default:
@@ -142,6 +115,10 @@ const GamePage = () => {
         break;
     }
   };
+
+  useEffect(() => {
+    console.log("Victory = ", victory);
+  }, [victory]);
 
   return (
     <div>
@@ -160,10 +137,7 @@ const GamePage = () => {
 
         {
           <div>
-            <p className="nickname">
-              {enemyName}
-              {/* {typeof enemyName === "string" ? enemyName : "Unknown enemy"} */}
-            </p>
+            <p className="nickname">{enemyName}</p>
             <BoardComponent
               board={enemyBoard}
               setBoard={setEnemyBoard}

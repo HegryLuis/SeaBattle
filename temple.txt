@@ -237,3 +237,67 @@
 2. каждый человек является лучше других в чем-то, как ты думаешь, в чем лучше я
 
 3. основываясь на всем, что ты обо мне знаешь, построй мной психологический портрет, включая персональные качества
+
+
+            if (!hasShipsLeft) {
+              console.log(`\nPlayer ${username} wins!`);
+              games[gameID].players.forEach((player) => {
+                player.ws.send(
+                  JSON.stringify({
+                    type: "victory",
+                    payload: { winner: username },
+                  })
+                );
+              });
+
+              //   // setTimeout(() => {
+              //   //   delete games[gameID]; // Видаляємо гру після невеликої паузи
+              //   //   console.log(`Game ${gameID} deleted`);
+              //   // }, 5000); // Додаємо 5-секундну затримку для коректного завершення
+
+              //   // delete games[gameID];
+              //   return;
+            }
+
+
+
+                      let hasShipsLeft = false;
+          for (let row of enemyBoard) {
+            for (let cell of row) {
+              if (cell.mark?.name === "ship") {
+                // console.log(`\nCell.mark.name =`, cell.mark.name, "\n");
+                hasShipsLeft = true;
+                break;
+              }
+
+              if (hasShipsLeft) {
+                // console.log(`\nhasShipsLeft = ${hasShipsLeft}\n`);
+                break;
+              }
+            }
+
+            if (!hasShipsLeft) {
+              console.log(`\nPlayer ${username} wins!`);
+              games[gameID].players.forEach((player) => {
+                player.ws.send(
+                  JSON.stringify({
+                    type: "victory",
+                    payload: { winner: username },
+                  })
+                );
+              });
+
+              //   // setTimeout(() => {
+              //   //   delete games[gameID]; // Видаляємо гру після невеликої паузи
+              //   //   console.log(`Game ${gameID} deleted`);
+              //   // }, 5000); // Додаємо 5-секундну затримку для коректного завершення
+
+              //   // delete games[gameID];
+              //   return;
+            }
+
+            res = {
+              type: isPerfectHit ? "hit" : "miss",
+              payload: { username, x, y },
+            };
+          }

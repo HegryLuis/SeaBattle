@@ -14,7 +14,6 @@ function start() {
 
       if (req.event == "connect") {
         wsClient.username = req.payload.username;
-        // console.log("req = ", req);
         initGames(wsClient, req.payload.gameID);
       }
 
@@ -36,7 +35,6 @@ function start() {
   });
 
   function initGames(ws, gameID) {
-    //console.log("Получен gameID:", gameID);
     if (!games[gameID]) {
       games[gameID] = {
         players: [],
@@ -52,9 +50,6 @@ function start() {
 
     if (games[gameID].players.length === 2) {
       const [player1, player2] = games[gameID].players;
-
-      console.log(`Player1: ${player1.username}, Enemy: ${player2.username}`);
-      console.log(`Player2: ${player2.username}, Enemy: ${player1.username}`);
 
       player1.ws.send(
         JSON.stringify({
@@ -80,7 +75,7 @@ function start() {
         })
       );
 
-      games[gameID].turn = player1.username; // Збережемо, хто ходить
+      games[gameID].turn = player1.username;
     }
   }
 
@@ -104,8 +99,6 @@ function start() {
           }
 
           games[gameID].boards[username] = board.cells;
-
-          //console.log(`Player ${username} connected to game ${gameID}`);
 
           res = {
             type: "connectToPlay",
@@ -137,8 +130,6 @@ function start() {
             console.log(`Game ${gameID} not found!`);
             return;
           }
-
-          console.log("shoot");
 
           const enemy = games[gameID].players.find(
             (player) => player.username !== username
@@ -177,10 +168,29 @@ function start() {
             cell.mark.name = isPerfectHit ? "hit" : "miss";
           }
 
-          if (isPerfectHit) {
-            cell.mark.name = "hit"; // Помечаем клетку как "попадание"
-          } else {
-            cell.mark.name = "miss"; // Помечаем клетку как "промах"
+          // Victory search
+          // если больше нет кораблей -> вывести на консоль имя победителя
+          let hasShipsLeft = false;
+          for (let row of enemyBoard) {
+            for (let cell of row) {
+              if (cell.mark?.name === "ship") {
+                console.log(`${cell.mark.name} at ${cell.x}-${cell.y}`);
+                hasShipsLeft = true;
+                break;
+              }
+            }
+          }
+
+          if (!hasShipsLeft) {
+            console.log(`\nPlayer ${username} wins!`);
+            games[gameID].players.forEach((player) => {
+              player.ws.send(
+                JSON.stringify({
+                  type: "victory",
+                  payload: { winner: username },
+                })
+              );
+            });
           }
 
           res = {
@@ -189,13 +199,13 @@ function start() {
           };
 
           if (!isPerfectHit) {
-            games[gameID].turn = enemy.username; // Оновлюємо, хто має ходит
+            games[gameID].turn = enemy.username;
 
             games[gameID].players.forEach((player) => {
               player.ws.send(
                 JSON.stringify({
                   type: "changeTurn",
-                  payload: { nextTurn: enemy.username },
+                  payload: { nextTurn: enemy.username, x, y },
                 })
               );
             });
@@ -212,7 +222,6 @@ function start() {
         if (typeof client.ws.send !== "function") {
           console.error("client.ws не является WebSocket:", client);
         } else {
-          console.log(res);
           client.ws.send(JSON.stringify(res));
         }
       });

@@ -41,7 +41,6 @@ const LoginPage = () => {
 
     wss.onmessage = (res) => {
       const { type, payload } = JSON.parse(res.data);
-      console.log("Received info from server : ", payload);
 
       if (type === "connectToPlay" && payload?.success) {
         if (
