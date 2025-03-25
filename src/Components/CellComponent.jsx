@@ -5,8 +5,6 @@ const CellComponent = ({ cell, isHighlighted, addMark }) => {
   if (cell.mark) cellClasses.push(cell.mark.color);
   if (isHighlighted) cellClasses.push("highlight");
 
-  // cellClasses.push(cell?.mark?.color);
-
   return (
     <div
       className={cellClasses.join(" ")}

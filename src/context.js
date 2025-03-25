@@ -8,11 +8,10 @@ export const Provider = ({ children }) => {
   const [gameID, setGameID] = useState("");
   const [nickname, setNickname] = useState("");
   const [enemyName, setEnemyName] = useState("");
-  const [wss, setWss] = useState(null); // Здесь храните WebSocket
+  const [wss, setWss] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState();
 
   useEffect(() => {
-    // Создаем WebSocket один раз при монтировании компонента
     const socket = new WebSocket("ws://localhost:4000");
     setWss(socket);
 
@@ -21,17 +20,21 @@ export const Provider = ({ children }) => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.close();
       }
-      // socket.close();
     };
   }, []);
 
   const ships = [
     { x: 0, y: 0, size: 4, orientation: "horizontal" },
     { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    { x: 8, y: 3, size: 3, orientation: "vertical" },
+    { x: 5, y: 5, size: 3, orientation: "horizontal" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
   ];
-  // const ctx = useContext(context);
-  // if (!ctx) throw new Error("This hook should be used inside App component");
 
   return (
     <context.Provider
@@ -54,5 +57,3 @@ export const Provider = ({ children }) => {
     </context.Provider>
   );
 };
-
-// export const { Provider } = context;

@@ -31,7 +31,7 @@ function start() {
         );
 
         if (games[gameID].players.length === 0) {
-          delete games[gameID]; // Удаляем пустую игру
+          delete games[gameID]; // Delete empty game
           console.log(`Game ${gameID} deleted`);
         }
       });
@@ -171,7 +171,7 @@ function start() {
             console.log(
               `Cell at (${x}, ${y}) has no mark! Creating default mark.`
             );
-            cell.mark = { name: "empty" }; // Добавляем пустую метку
+            cell.mark = { name: "empty" }; // Add empty mark
           }
 
           const isPerfectHit =

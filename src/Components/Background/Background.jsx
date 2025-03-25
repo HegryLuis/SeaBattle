@@ -10,7 +10,7 @@ const Background = () => {
     return {
       top: `${Math.floor(Math.random() * 100)}%`,
       left: `${Math.floor(Math.random() * 100)}%`,
-      animationDuration: `${Math.floor(Math.random() * 5 + 20)}s`, // Рандомное время анимации от 5 до 10 секунд
+      animationDuration: `${Math.floor(Math.random() * 5 + 20)}s`,
     };
   };
 

@@ -1,14 +1,12 @@
 .overlay {
   position: absolute;
   user-select: none;
-  opacity: 0.7; /* Полупрозрачные иконки */
+  opacity: 0.7;
   will-change: transform;
-  z-index: -1; /* Перемещаем иконки на задний план */
-  width: 96px; /* Увеличиваем размер на 36px (60px + 36px) */
-  height: 96px; /* Увеличиваем размер на 36px (60px + 36px) */
+  z-index: -1;
+  width: 96px;
+  height: 96px;
 }
-/* Фон фиксируется на экране */
-/* Фон всегда за всеми другими элементами */
 .background {
   position: fixed;
   width: 100%;
@@ -18,17 +16,15 @@
   z-index: -1;
 }
 
-/* Анимация движения по кругу */
 @keyframes moveInCircle {
   0% {
-    transform: rotate(0deg) translateX(150px) rotate(0deg); /* Начальная позиция */
+    transform: rotate(0deg) translateX(150px) rotate(0deg);
   }
   100% {
-    transform: rotate(360deg) translateX(150px) rotate(-360deg); /* Конечная позиция по кругу */
+    transform: rotate(360deg) translateX(150px) rotate(-360deg);
   }
 }
 
-/* Применяем анимацию для каждого элемента */
 .overlay {
   animation: moveInCircle linear infinite;
 }
