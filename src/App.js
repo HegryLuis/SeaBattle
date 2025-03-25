@@ -4,11 +4,13 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
 import GamePage from "./Pages/GamePage";
 import { Provider } from "./context";
+import Background from "./Components/Background/Background";
 
 function App() {
   return (
     <Provider>
       <div className="App">
+        <Background />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LoginPage />} />

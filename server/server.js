@@ -12,12 +12,16 @@ function start() {
     wsClient.on("message", async (message) => {
       const req = JSON.parse(message.toString());
 
+      console.time(`Processing time for ${req.event}`);
+
       if (req.event == "connect") {
         wsClient.username = req.payload.username;
         initGames(wsClient, req.payload.gameID);
       }
 
       broadcast(req);
+
+      console.timeEnd(`Processing time for ${req.event}`);
     });
 
     wsClient.on("close", () => {
@@ -35,6 +39,8 @@ function start() {
   });
 
   function initGames(ws, gameID) {
+    console.time("initGames");
+
     if (!games[gameID]) {
       games[gameID] = {
         players: [],
@@ -45,11 +51,14 @@ function start() {
     if (!games[gameID].players.find((p) => p.username === ws.username)) {
       games[gameID].players.push({ username: ws.username, ws: ws });
     }
-    // if (!games[gameID]) games[gameID] = [ws];
-    // else if (games[gameID].players.length < 2) games[gameID].players.push(ws);
 
     if (games[gameID].players.length === 2) {
       const [player1, player2] = games[gameID].players;
+
+      if (player1.username === player2.username) {
+        console.log("Same names!");
+        player2.username = `${player2.username} (1)`;
+      }
 
       player1.ws.send(
         JSON.stringify({
@@ -77,9 +86,13 @@ function start() {
 
       games[gameID].turn = player1.username;
     }
+
+    console.timeEnd("initGames");
   }
 
   function broadcast(params, wsClient) {
+    console.time("broadcast");
+
     let res;
 
     const { username, gameID, board } = params.payload;
@@ -174,7 +187,6 @@ function start() {
           for (let row of enemyBoard) {
             for (let cell of row) {
               if (cell.mark?.name === "ship") {
-                console.log(`${cell.mark.name} at ${cell.x}-${cell.y}`);
                 hasShipsLeft = true;
                 break;
               }
@@ -225,9 +237,9 @@ function start() {
           client.ws.send(JSON.stringify(res));
         }
       });
-
-      // client.send(JSON.stringify(res));
     });
+
+    console.timeEnd("broadcast");
   }
 }
 

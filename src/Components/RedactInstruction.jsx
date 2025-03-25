@@ -3,7 +3,7 @@ import React from "react";
 const RedactInstruction = () => {
   return (
     <>
-      <div>
+      <div className="redact-instruction">
         <p>Move ships:</p>
         <p>Up - up arrow</p>
         <p>Down - down arrow</p>

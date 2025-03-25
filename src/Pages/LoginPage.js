@@ -69,75 +69,79 @@ const LoginPage = () => {
       <form onSubmit={startPlay}>
         <h2>Authorization</h2>
 
-        <div className="field-group">
-          <div>
-            <label htmlFor="nickname">Your nickname</label>
+        <div className="wrap-input">
+          <div className="nickname-input-wrap field-group">
+            <div>
+              <label htmlFor="nickname">Your nickname</label>
+            </div>
+            <input
+              type="text"
+              name="nickname"
+              id="nickname"
+              onChange={(e) => {
+                setNickname(e.target.value);
+              }}
+            />
           </div>
-          <input
-            type="text"
-            name="nickname"
-            id="nickname"
-            onChange={(e) => {
-              setNickname(e.target.value);
-            }}
-          />
-        </div>
 
-        <div
-          className="field-group"
-          onChange={(e) => {
-            setInvitationGame(e.target.id === "ingame");
-          }}
-        >
-          <input
-            type="radio"
-            name="typeEnter"
-            id="gen"
-            value={!invitationGame}
-            defaultChecked={!invitationGame}
-          />
-          <label htmlFor="gen">Create new game</label>
-
-          <input
-            type="radio"
-            name="typeEnter"
-            id="ingame"
-            value={invitationGame}
-            defaultChecked={invitationGame}
-          />
-          <label htmlFor="ingame">Enter in by id</label>
-        </div>
-
-        <div className="field-group">
-          {invitationGame ? (
-            <>
-              <div>
-                <label htmlFor="gameID">Enter game ID</label>
-              </div>
+          <div className="id-input-wrap">
+            <div
+              className="field-group"
+              onChange={(e) => {
+                setInvitationGame(e.target.id === "ingame");
+              }}
+            >
               <input
-                type="text"
-                name="gameID"
-                defaultValue=""
-                id="gameID"
-                onChange={(e) => {
-                  setGameID(e.target.value);
-                }}
+                type="radio"
+                name="typeEnter"
+                id="gen"
+                value={!invitationGame}
+                defaultChecked={!invitationGame}
               />
-            </>
-          ) : (
-            <>
-              <button
-                className="btn-gen"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setGameID(Date.now());
-                }}
-              >
-                Generate game ID
-              </button>
-              <p>Generated ID : {gameID}</p>
-            </>
-          )}
+              <label htmlFor="gen">Create new game</label>
+
+              <input
+                type="radio"
+                name="typeEnter"
+                id="ingame"
+                value={invitationGame}
+                defaultChecked={invitationGame}
+              />
+              <label htmlFor="ingame">Enter in by id</label>
+            </div>
+
+            <div className="field-group">
+              {invitationGame ? (
+                <>
+                  <div>
+                    <label htmlFor="gameID">Enter game ID</label>
+                  </div>
+                  <input
+                    type="text"
+                    name="gameID"
+                    defaultValue=""
+                    id="gameID"
+                    onChange={(e) => {
+                      setGameID(e.target.value);
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn-gen"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setGameID(Date.now());
+                    }}
+                  >
+                    Generate game ID
+                  </button>
+                  <p>Generated ID : {gameID}</p>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="board-redacting">
@@ -146,11 +150,15 @@ const LoginPage = () => {
         </div>
 
         {!shipsPlaced ? (
-          <p>Your ships aren`t ready</p>
+          <div className="redacting-status">
+            <p>Your ships aren`t ready</p>
+          </div>
         ) : (
-          <button type="submit" className="btn-ready">
-            PLAY NOW!
-          </button>
+          <div className="redacting-status">
+            <button type="submit" className="btn-ready redacting-status">
+              PLAY NOW!
+            </button>
+          </div>
         )}
       </form>
     </div>

@@ -121,7 +121,7 @@ const GamePage = () => {
   }, [victory]);
 
   return (
-    <div>
+    <div className="wrap">
       <h1>Welcome to the game, my Friend!</h1>
 
       <div className="boards-wrap">
@@ -148,9 +148,10 @@ const GamePage = () => {
         }
       </div>
 
-      <GameState isMyTurn={isMyTurn} ready={ready} />
-
-      <button onClick={() => navigate("/")}>Log out</button>
+      <div className="stats">
+        <GameState isMyTurn={isMyTurn} ready={ready} />
+        <button onClick={() => navigate("/")}>Log out</button>
+      </div>
     </div>
   );
 };
