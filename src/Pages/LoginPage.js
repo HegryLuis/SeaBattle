@@ -86,7 +86,7 @@ const LoginPage = () => {
 
           <div className="id-input-wrap">
             <div
-              className="field-group"
+              className="field-group radio-input"
               onChange={(e) => {
                 setInvitationGame(e.target.id === "ingame");
               }}

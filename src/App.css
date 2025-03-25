@@ -36,12 +36,27 @@ h1 {
   text-align: center;
 }
 
+.radio-input {
+  display: flex;
+  flex-direction: column;
+}
+
 form {
   margin-top: 20px;
-  background: #1a3b5d;
+  /* background: #1a3b5d; */
   padding: 20px;
+  border: 2px solid #1e90ff;
   border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); */
+}
+
+.stats {
+  width: 30%;
+  align-items: center;
+}
+
+.stats-p {
+  text-align: center;
 }
 
 .redacting-status {
@@ -78,7 +93,7 @@ button {
 input[type="text"] {
   /* background: #224b75; */
   background: #bebebe;
-  color: white;
+  color: black;
   outline: none;
 }
 
@@ -186,8 +201,46 @@ button:hover {
 /* Генерация ID */
 .btn-gen {
   background-color: #8e44ad;
+  padding: 15px;
 }
 
 .btn-gen:hover {
   background-color: #9b59b6;
+}
+
+@media (max-width: 768px) {
+  .redact__wrap {
+    flex-direction: column;
+  }
+
+  .redact__wrap p {
+    font-size: 10px;
+  }
+
+  .wrap-input {
+    max-width: 90%;
+    margin: 0;
+  }
+
+  .wrap-game {
+    flex-direction: column-reverse;
+  }
+
+  .stats {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stats button {
+    width: 30%;
+    margin: 0 auto;
+  }
+
+  .game-title {
+    display: none;
+  }
+
+  .boards-wrap {
+    flex-direction: column-reverse;
+  }
 }

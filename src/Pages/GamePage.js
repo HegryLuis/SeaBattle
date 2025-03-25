@@ -27,7 +27,7 @@ const GamePage = () => {
   const [victory, setVictory] = useState(null);
 
   function shoot(x, y) {
-    if (!isMyTurn) return; // надо добавить вывод модального блока
+    if (!isMyTurn || victory) return;
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -53,18 +53,6 @@ const GamePage = () => {
         },
       })
     );
-  }
-
-  function restart() {
-    const newMyBoard = new Board();
-    const newEnemyBoard = new Board();
-
-    newMyBoard.initCells();
-    newEnemyBoard.initCells();
-
-    setMyBoard(newMyBoard);
-    setEnemyBoard(newEnemyBoard);
-    setIsMyTurn(false);
   }
 
   function changeBoardAfterShoot(board, setBoard, x, y, isPerfectHit) {
@@ -121,8 +109,8 @@ const GamePage = () => {
   }, [victory]);
 
   return (
-    <div className="wrap">
-      <h1>Welcome to the game, my Friend!</h1>
+    <div className="wrap wrap-game">
+      <h1 className="game-title">Welcome to the game, my Friend!</h1>
 
       <div className="boards-wrap">
         <div>
@@ -149,7 +137,7 @@ const GamePage = () => {
       </div>
 
       <div className="stats">
-        <GameState isMyTurn={isMyTurn} ready={ready} />
+        <GameState isMyTurn={isMyTurn} victory={victory} />
         <button onClick={() => navigate("/")}>Log out</button>
       </div>
     </div>

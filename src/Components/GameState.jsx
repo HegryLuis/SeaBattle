@@ -1,8 +1,12 @@
 import React from "react";
 
-const GameState = ({ isMyTurn }) => {
+const GameState = ({ isMyTurn, victory }) => {
+  if (victory) {
+    return <p className="stats-p">🏆 {victory} wins! 🎉</p>;
+  }
+
   return (
-    <div>
+    <div className="stats-p">
       {isMyTurn ? (
         <p>
           What are your waiting for?
