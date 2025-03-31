@@ -67,6 +67,11 @@ form h2 {
   text-align: center;
 }
 
+.btn-ready:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+
 .field-group {
   margin-top: 10px;
 }

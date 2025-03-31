@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useContext } from "react";
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
 import GamePage from "./Pages/GamePage";
-import { Provider } from "./context";
+import { context, Provider } from "./context";
 import Background from "./Components/Background/Background";
+import AuthPage from "./Pages/AuthPage";
+import ProtectedRoute from "./hoc/ProtectedRoute";
 
 function App() {
   return (
@@ -13,8 +15,24 @@ function App() {
         <Background />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/game/:gameID" element={<GamePage />}></Route>
+            <Route path="/" element={<AuthPage />} />
+            <Route
+              path="/game"
+              element={
+                <ProtectedRoute>
+                  <LoginPage />{" "}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/game/:gameID"
+              element={
+                <ProtectedRoute>
+                  <GamePage />{" "}
+                </ProtectedRoute>
+              }
+            ></Route>
+            {/* <Route path="/" element={<LoginPage />} /> */}
           </Routes>
         </BrowserRouter>
       </div>

@@ -1,7 +1,8 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { context } from "../context";
 import RedactComponent from "../Components/RedactComponent";
+import Header from "../Components/Header/Header";
 
 const LoginPage = () => {
   const [invitationGame, setInvitationGame] = useState();
@@ -16,14 +17,25 @@ const LoginPage = () => {
     wss,
     setIsMyTurn,
     enemyName,
+    isAuthenticated,
   } = useContext(context);
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/"); // Перенаправлення на сторінку логіну, якщо не авторизований
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    console.log(`Nickname => ${nickname}`);
+  }, [nickname]);
+
   const startPlay = (e) => {
     e.preventDefault();
 
-    if (!nickname || !gameID) {
+    if (!gameID) {
       alert("Error! You didn`t enter a name or a game ID");
       return;
     }
@@ -65,103 +77,98 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="wrap">
-      <form onSubmit={startPlay}>
-        <h2>Authorization</h2>
-
-        <div className="wrap-input">
-          <div className="nickname-input-wrap field-group">
-            <div>
-              <label htmlFor="nickname">Your nickname</label>
-            </div>
-            <input
-              type="text"
-              name="nickname"
-              id="nickname"
-              onChange={(e) => {
-                setNickname(e.target.value);
-              }}
-            />
-          </div>
-
-          <div className="id-input-wrap">
-            <div
-              className="field-group radio-input"
-              onChange={(e) => {
-                setInvitationGame(e.target.id === "ingame");
-              }}
-            >
-              <input
-                type="radio"
-                name="typeEnter"
-                id="gen"
-                value={!invitationGame}
-                defaultChecked={!invitationGame}
-              />
-              <label htmlFor="gen">Create new game</label>
-
-              <input
-                type="radio"
-                name="typeEnter"
-                id="ingame"
-                value={invitationGame}
-                defaultChecked={invitationGame}
-              />
-              <label htmlFor="ingame">Enter in by id</label>
-            </div>
-
+    <>
+      {/* <Header /> */}
+      <div className="wrap">
+        <form onSubmit={startPlay}>
+          <div className="wrap-input">
             <div className="field-group">
-              {invitationGame ? (
-                <>
-                  <div>
-                    <label htmlFor="gameID">Enter game ID</label>
-                  </div>
-                  <input
-                    type="text"
-                    name="gameID"
-                    defaultValue=""
-                    id="gameID"
-                    onChange={(e) => {
-                      setGameID(e.target.value);
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <button
-                    className="btn-gen"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setGameID(Date.now());
-                    }}
-                  >
-                    Generate game ID
-                  </button>
-                  <p>Generated ID : {gameID}</p>
-                </>
-              )}
+              <h2>Your name {nickname}</h2>
+            </div>
+
+            <div className="id-input-wrap">
+              <div
+                className="field-group radio-input"
+                onChange={(e) => {
+                  setInvitationGame(e.target.id === "ingame");
+                }}
+              >
+                <input
+                  type="radio"
+                  name="typeEnter"
+                  id="gen"
+                  value={!invitationGame}
+                  defaultChecked={!invitationGame}
+                />
+                <label htmlFor="gen">Create new game</label>
+
+                <input
+                  type="radio"
+                  name="typeEnter"
+                  id="ingame"
+                  value={invitationGame}
+                  defaultChecked={invitationGame}
+                />
+                <label htmlFor="ingame">Enter in by id</label>
+              </div>
+
+              <div className="field-group">
+                {invitationGame ? (
+                  <>
+                    <div>
+                      <label htmlFor="gameID">Enter game ID</label>
+                    </div>
+                    <input
+                      type="text"
+                      name="gameID"
+                      defaultValue=""
+                      id="gameID"
+                      onChange={(e) => {
+                        setGameID(e.target.value);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="btn-gen"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setGameID(Date.now());
+                      }}
+                    >
+                      Generate game ID
+                    </button>
+                    <p>Generated ID : {gameID}</p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="board-redacting">
-          <h1 className="redacting-title">Board Redacting</h1>
-          <RedactComponent setShipsPlaced={setShipsPlaced} />
-        </div>
+          <div className="board-redacting">
+            <h1 className="redacting-title">Board Redacting</h1>
+            <RedactComponent setShipsPlaced={setShipsPlaced} />
+          </div>
 
-        {!shipsPlaced ? (
-          <div className="redacting-status">
-            <p>Your ships aren`t ready</p>
-          </div>
-        ) : (
-          <div className="redacting-status">
-            <button type="submit" className="btn-ready redacting-status">
-              PLAY NOW!
-            </button>
-          </div>
-        )}
-      </form>
-    </div>
+          {!shipsPlaced ? (
+            <div className="redacting-status">
+              <p>Your ships aren`t ready</p>
+            </div>
+          ) : (
+            <div className="redacting-status">
+              <button
+                type="submit"
+                className="btn-ready redacting-status"
+                disabled={!shipsPlaced}
+              >
+                PLAY NOW!
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+    </>
   );
 };
 
