@@ -2,25 +2,51 @@ import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { context } from "../context";
 import RedactComponent from "../Components/RedactComponent";
-import Header from "../Components/Header/Header";
+import { Board } from "../Models/Board";
+import Cookies from "js-cookie";
 
 const LoginPage = () => {
   const [invitationGame, setInvitationGame] = useState();
+  const [waitingStatus, setWaitingStatus] = useState(null);
   const [shipsPlaced, setShipsPlaced] = useState(false);
+  const [playersNumber, setPlayersNumber] = useState(2);
   const {
     nickname,
-    setNickname,
     gameID,
     setGameID,
-    setEnemyName,
     myBoard,
     wss,
-    setIsMyTurn,
-    enemyName,
     isAuthenticated,
+    enemies,
+    setEnemies,
+    setTurnIndex,
   } = useContext(context);
 
   const navigate = useNavigate();
+
+  function handleStartGame(payload) {
+    console.log("🚀 handleStartGame called with payload:", payload);
+
+    const { username, opponents = [], turnIndex } = payload;
+
+    if (!Array.isArray(opponents)) {
+      console.error("Некоректний формат opponents:", opponents);
+      return;
+    }
+
+    Cookies.set("nickname", username, { expires: 1 });
+    setTurnIndex(turnIndex);
+
+    const updatedEnemies = opponents.map((enemy) => {
+      return {
+        name: enemy.name,
+        turnIndex: enemy.turnIndex,
+        board: new Board().getCopyBoard(),
+      };
+    });
+
+    setEnemies(updatedEnemies);
+  }
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -29,8 +55,39 @@ const LoginPage = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    console.log(`Nickname => ${nickname}`);
-  }, [nickname]);
+    if (!wss) {
+      console.error("WebSocket (wss) не ініціалізований!");
+      return;
+    }
+
+    const handleMessage = (res) => {
+      const { type, payload } = JSON.parse(res.data);
+      console.log(`Received message: ${type}`, payload); // Дебаг
+
+      if (type === "gameStarted") {
+        handleStartGame(payload);
+        // console.log("Game started! Navigating to /game/" + gameID);
+
+        navigate("/game/" + gameID);
+      }
+
+      if (type === "waitingForPlayers") {
+        setWaitingStatus(
+          `Waiting for players: ${payload.playersCount} / ${payload.playersNeeded}`
+        );
+      }
+    };
+
+    wss.addEventListener("message", handleMessage);
+
+    return () => {
+      wss.removeEventListener("message", handleMessage);
+    };
+  }, [wss, gameID, navigate]);
+
+  //
+  //
+  //
 
   const startPlay = (e) => {
     e.preventDefault();
@@ -44,41 +101,23 @@ const LoginPage = () => {
       alert("Your ships aren`t ready!");
     }
 
+    console.log(`Sending connecting request`);
+
     wss.send(
       JSON.stringify({
         event: "connect",
-        payload: { username: nickname, gameID, board: myBoard.serialize() },
+        payload: {
+          username: nickname,
+          gameID,
+          board: myBoard.serialize(),
+          playersNum: Number(playersNumber),
+        },
       })
     );
-
-    wss.onmessage = (res) => {
-      const { type, payload } = JSON.parse(res.data);
-
-      if (type === "connectToPlay" && payload?.success) {
-        if (
-          payload.enemyName &&
-          payload.enemyName !== enemyName &&
-          nickname !== payload.enemyName
-        ) {
-          setEnemyName(payload.enemyName);
-          setIsMyTurn(payload.isMyTurn);
-          localStorage.nickname = nickname;
-
-          if (gameID) {
-            navigate("/game/" + gameID);
-          } else {
-            console.error("Invalid gameID");
-          }
-        } else {
-          alert("Waiting for enemy");
-        }
-      }
-    };
   };
 
   return (
     <>
-      {/* <Header /> */}
       <div className="wrap">
         <form onSubmit={startPlay}>
           <div className="wrap-input">
@@ -140,6 +179,23 @@ const LoginPage = () => {
                       Generate game ID
                     </button>
                     <p>Generated ID : {gameID}</p>
+
+                    <div className="field-group">
+                      <label htmlFor="numOfPlayers">
+                        <strong>Number of players : </strong>
+                      </label>
+                      <input
+                        type="number"
+                        id="players"
+                        name="players"
+                        min="2"
+                        max="4"
+                        value={playersNumber}
+                        onChange={(e) => {
+                          setPlayersNumber(e.target.value);
+                        }}
+                      />
+                    </div>
                   </>
                 )}
               </div>
@@ -157,6 +213,11 @@ const LoginPage = () => {
             </div>
           ) : (
             <div className="redacting-status">
+              {waitingStatus && (
+                <div className="waiting-status">
+                  <p>{waitingStatus}</p>
+                </div>
+              )}
               <button
                 type="submit"
                 className="btn-ready redacting-status"

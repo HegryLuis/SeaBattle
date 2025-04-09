@@ -11,29 +11,26 @@ const GamePage = () => {
     myBoard,
     setMyBoard,
     nickname,
-    enemyName,
+    enemies,
+    setEnemies,
     wss,
     isMyTurn,
     setIsMyTurn,
   } = useContext(context);
+
   const navigate = useNavigate();
 
-  const [enemyBoard, setEnemyBoard] = useState(new Board());
-  // History move: [{moveID, player, x, y, hit/miss}, {} ...]
-  const [historyMove, setHistoryMove] = useState([]);
-
-  // Victory -> player`s name
-  // если кораблей больше нет, то сервер должен отправить имя победителя и закончить игру
+  const [turnIndex, setTurnIndex] = useState(0);
   const [victory, setVictory] = useState(null);
 
-  function shoot(x, y) {
+  function shoot(target, x, y) {
     if (!isMyTurn || victory) return;
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
         JSON.stringify({
           event: "shoot",
-          payload: { username: nickname, x, y, gameID },
+          payload: { username: nickname, x, y, gameID, target },
         })
       );
     } else {
@@ -41,76 +38,105 @@ const GamePage = () => {
     }
   }
 
-  function ready() {
-    console.log("Function ready");
-    wss.send(
-      JSON.stringify({
-        event: "ready",
-        payload: {
-          username: localStorage.nickname,
-          gameID,
-          board: myBoard.cells,
-        },
-      })
-    );
-  }
+  function handleShoot(type, payload) {
+    const { shooter, target, x, y } = payload;
 
-  function changeBoardAfterShoot(board, setBoard, x, y, isPerfectHit) {
-    isPerfectHit ? board.addDamage(x, y) : board.addMiss(x, y);
-    const newBoard = board.getCopyBoard();
-    setBoard(newBoard);
-  }
-
-  wss.onmessage = function (response) {
-    const { type, payload } = JSON.parse(response.data);
-    const { username, x, y } = payload;
-
-    switch (type) {
-      case "hit":
-        if (username !== localStorage.nickname) {
-          // Враг попал по мне
-          changeBoardAfterShoot(myBoard, setMyBoard, x, y, true);
-        } else {
-          // Я попал по врагу
-          changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, true);
-        }
-        break;
-
-      case "miss":
-        if (username !== localStorage.nickname) {
-          // Враг промахнулся
-          changeBoardAfterShoot(myBoard, setMyBoard, x, y, false);
-        } else {
-          // Я промахнулся
-          changeBoardAfterShoot(enemyBoard, setEnemyBoard, x, y, false);
-        }
-        break;
-
-      case "changeTurn":
-        setIsMyTurn(payload.nextTurn === nickname);
-
-        break;
-
-      case "connectToPlay":
-        break;
-
-      case "victory":
-        setVictory(payload.winner);
-        break;
-
-      default:
-        console.log("default: ", response.data);
-        break;
+    if (shooter === nickname) {
+      setEnemies((prev) => {
+        prev.map((enemy) => {
+          if (enemy.name === target) {
+            const boardCopy = [...enemy.board];
+            boardCopy[y][x].mark.name = type === "hit" ? "hit" : "miss";
+            return { ...enemy, board: boardCopy };
+          }
+          return enemy;
+        });
+      });
+      // setEnemyBoards((prev) => {
+      //   const newBoard = { ...prev };
+      //   newBoard[target] = [...prev[target]];
+      //   newBoard[target][y][x].mark.name = type === "hit" ? "hit" : "miss";
+      //   return newBoard;
+      // });
+    } else if (target === nickname) {
+      setMyBoard((prev) => {
+        const newBoard = prev.getCopyBoard();
+        newBoard[y][x].mark.name = type === "hit" ? "hit" : "miss";
+        return newBoard;
+      });
     }
-  };
+  }
+
+  function handleChangeTurn(payload) {
+    const nextTurn = payload.turnIndex;
+    setTurnIndex(nextTurn);
+
+    if (!enemies || !enemies.length) {
+      console.warn("Список противников ещё не инициализирован");
+      return;
+    }
+
+    // Собираем всех игроков (включая себя)
+    const allPlayers = [nickname, ...enemies.map((e) => e.name)];
+
+    const currentPlayer = allPlayers[nextTurn];
+    setIsMyTurn(currentPlayer === nickname);
+  }
+
+  function getNextTurnIndex(currentIndex, playersList) {
+    return (currentIndex + 1) % playersList.length;
+  }
 
   useEffect(() => {
-    console.log("Victory = ", victory);
-  }, [victory]);
+    if (!wss) {
+      console.error("WebSocket не инициализирован");
+      return;
+    }
+
+    wss.onmessage = function (response) {
+      const { type, payload } = JSON.parse(response.data);
+      const { username, x, y } = payload;
+
+      switch (type) {
+        // case "gameStarted":
+        //   handleStartGame(payload);
+        //   break;
+
+        case "hit":
+        case "miss":
+          handleShoot(type, payload);
+          break;
+
+        case "changeTurn":
+          handleChangeTurn(payload);
+          // setIsMyTurn(players[payload.turnIndex] === nickname);
+          break;
+
+        case "connectToPlay":
+          break;
+
+        case "victory":
+          setVictory(payload.winner);
+          break;
+
+        default:
+          console.warn("Unknown event type :", type, payload);
+          break;
+      }
+    };
+
+    return () => {
+      wss.onmessage = null;
+    };
+  }, [wss, nickname]);
+
+  useEffect(() => {
+    console.log(`Enemies => `, enemies);
+  }, [enemies]);
 
   return (
     <div className="wrap wrap-game">
-      <h1 className="game-title">Welcome to the game, my Friend!</h1>
+      <h1 className="game-title">Battle has begun!</h1>
 
       <div className="boards-wrap">
         <div>
@@ -123,6 +149,29 @@ const GamePage = () => {
           />
         </div>
 
+        {enemies
+          .filter((e) => e.name !== nickname)
+          .map((enemy, i) => {
+            return (
+              <div key={enemy.name}>
+                <p className="nickname">{enemy.name}</p>
+                <BoardComponent
+                  board={enemy.board}
+                  setBoard={(newBoard) => {
+                    setEnemies((prev) =>
+                      prev.map((e) =>
+                        e.name === enemy.name ? { ...e, board: newBoard } : e
+                      )
+                    );
+                  }}
+                  canShoot={isMyTurn}
+                  shoot={(x, y) => shoot(enemy.name, x, y)}
+                />
+              </div>
+            );
+          })}
+
+        {/* 
         {
           <div>
             <p className="nickname">{enemyName}</p>
@@ -133,7 +182,7 @@ const GamePage = () => {
               shoot={shoot}
             />
           </div>
-        }
+        } */}
       </div>
 
       <div className="stats">

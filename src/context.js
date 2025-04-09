@@ -8,13 +8,26 @@ export const Provider = ({ children }) => {
   const [myBoard, setMyBoard] = useState(new Board());
   const [gameID, setGameID] = useState("");
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
-  const [enemyName, setEnemyName] = useState("");
+  const [enemies, setEnemies] = useState([]); // [{name: Player 2, board : {new Board}, turnIndex: 0}, {...}]
   const [wss, setWss] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState();
+  const [turnIndex, setTurnIndex] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(!!nickname);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:4000");
+
+    socket.onopen = () => {
+      console.log("✅ WebSocket подключен");
+    };
+
+    socket.onerror = (error) => {
+      console.error("❌ WebSocket ошибка:", error);
+    };
+
+    socket.onclose = () => {
+      console.warn("🔌 WebSocket закрыт");
+    };
     setWss(socket);
 
     // Закрываем WebSocket при размонтировании
@@ -36,15 +49,15 @@ export const Provider = ({ children }) => {
 
   const ships = [
     { x: 0, y: 0, size: 4, orientation: "horizontal" },
-    { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
   ];
 
   return (
@@ -57,13 +70,15 @@ export const Provider = ({ children }) => {
         myBoard,
         setMyBoard,
         ships,
-        enemyName,
-        setEnemyName,
+        enemies,
+        setEnemies,
         wss,
         isMyTurn,
         setIsMyTurn,
         isAuthenticated,
         setIsAuthenticated,
+        turnIndex,
+        setTurnIndex,
       }}
     >
       {children}

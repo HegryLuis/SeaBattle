@@ -301,3 +301,11 @@
               payload: { username, x, y },
             };
           }
+
+
+          
+  // function changeBoardAfterShoot(board, setBoard, x, y, isPerfectHit) {
+  //   isPerfectHit ? board.addDamage(x, y) : board.addMiss(x, y);
+  //   const newBoard = board.getCopyBoard();
+  //   setBoard(newBoard);
+  // }
