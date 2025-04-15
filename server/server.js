@@ -26,8 +26,6 @@ function start() {
       if (req.event === "ready") {
         markPlayerReady(req.payload);
       }
-
-      //broadcast(req);
     });
 
     wsClient.on("close", () => {
@@ -76,7 +74,6 @@ function start() {
     }
 
     game.players.push({ username: ws.username, ws });
-    // console.log(`ws.board  cells= ${JSON.stringify(ws.board)}`);
     game.boards[ws.username] = ws.board;
 
     ws.send(
@@ -121,20 +118,20 @@ function start() {
       };
       console.log(`🔸 Sending "gameStarted" to ${player.username}`);
 
-      console.log(`\n\nInformation: \n\tPlayer name : ${player.username}\n
-          Opponents : ${JSON.stringify(opponents, null, 2)}\n
-          Turn Index : ${index}\n
-        `);
+      // console.log(`\n\nInformation: \n\tPlayer name : ${player.username}\n
+      //     Opponents : ${JSON.stringify(opponents, null, 2)}\n
+      //     Turn Index : ${index}\n
+      //   `);
 
-      console.log("🔼 Отправка gameStarted:", {
-        type: "gameStarted",
-        payload: {
-          username: player.username,
-          opponents,
-          turnIndex: index,
-          globalTurn: game.globalTurn,
-        },
-      });
+      // console.log("🔼 Отправка gameStarted:", {
+      //   type: "gameStarted",
+      //   payload: {
+      //     username: player.username,
+      //     opponents,
+      //     turnIndex: index,
+      //     globalTurn: game.globalTurn,
+      //   },
+      // });
 
       player.ws.send(
         JSON.stringify({
@@ -142,7 +139,7 @@ function start() {
           payload: {
             username: player.username,
             opponents,
-            turnIndex: index,
+            turnIndex: playersTurnIndexes[player.username],
             globalTurn: game.globalTurn,
           },
         })
@@ -156,11 +153,6 @@ function start() {
     const game = games[gameID];
     if (!game) return;
 
-    console.log(
-      `Shoot:\n\tUsername = ${username}\n\tx=${x}, y=${y}\n\tgameID=${gameID}\n\ttarget=${target}`
-    );
-
-    console.log(`Game found`);
     const enemyBoard = game.boards[target];
     if (!enemyBoard) return;
 
@@ -175,21 +167,18 @@ function start() {
       return;
     }
     const isHit = cell?.mark?.name === "ship";
-    console.log(`isHit = ${isHit}`);
 
     if (!cell.mark) {
-      console.log(`Cell at (${x}, ${y}) has no mark! Creating default mark.`);
       cell.mark = { name: "empty" }; // Add empty mark
     }
 
     cell.mark.name = isHit ? "hit" : "miss";
-    console.log(`cell.mark.name = ${cell.mark.name}`);
 
     game.players.forEach((player) => {
-      console.log(`${player.username}`, "🔼 Отправка gameStarted:", {
-        type: "hit/miss",
-        payload: { shooter: username, target, x, y },
-      });
+      // console.log(`${player.username}`, "🔼 Отправка gameStarted:", {
+      //   type: "hit/miss",
+      //   payload: { shooter: username, target, x, y },
+      // });
 
       player.ws.send(
         JSON.stringify({
@@ -205,43 +194,11 @@ function start() {
       player.ws.send(
         JSON.stringify({
           type: "changeTurn",
-          payload: { turnIndex: game.globalTurn },
+          payload: { globalTurn: game.globalTurn },
         })
       );
     });
-
-    // if (checkVictory(gameID, target)) {
-    //   endGame(gameID, username);
-    // } else {
-    // const targetInfo = game.playerTargets[username];
-
-    // if (!isHit) {
-    //   targetInfo.currentTargetIndex++;
-
-    //   if (targetInfo.currentTargetIndex >= targetInfo.opponents.length) {
-    //     targetInfo.currentTargetIndex = 0;
-    //     game.globalTurn = (game.globalTurn + 1) % game.players.length;
-    //   }
-
-    //   game.players.forEach((player) => {
-    //     player.ws.send(
-    //       JSON.stringify({
-    //         type: "changeTurn",
-    //         payload: { globalTurn: game.globalTurn },
-    //       })
-    //     );
-    //   });
-    // }
-    // }
   }
-
-  // function checkVictory(gameID, target) {
-  // const board = games[gameID].boards.cells[target];
-  // if (!board) return false;
-  // return board.every((row) =>
-  //   row.every((cell) => cell.mark?.name !== "ship")
-  // );
-  // }
 
   function endGame(gameID, winner) {
     games[gameID].players.forEach((player) => {
@@ -253,3 +210,35 @@ function start() {
 }
 
 start();
+
+// if (checkVictory(gameID, target)) {
+//   endGame(gameID, username);
+// } else {
+// const targetInfo = game.playerTargets[username];
+
+// if (!isHit) {
+//   targetInfo.currentTargetIndex++;
+
+//   if (targetInfo.currentTargetIndex >= targetInfo.opponents.length) {
+//     targetInfo.currentTargetIndex = 0;
+//     game.globalTurn = (game.globalTurn + 1) % game.players.length;
+//   }
+
+//   game.players.forEach((player) => {
+//     player.ws.send(
+//       JSON.stringify({
+//         type: "changeTurn",
+//         payload: { globalTurn: game.globalTurn },
+//       })
+//     );
+//   });
+// }
+// }
+
+// function checkVictory(gameID, target) {
+// const board = games[gameID].boards.cells[target];
+// if (!board) return false;
+// return board.every((row) =>
+//   row.every((cell) => cell.mark?.name !== "ship")
+// );
+// }

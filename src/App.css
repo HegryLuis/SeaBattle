@@ -143,6 +143,8 @@ button:hover {
 
 /* Стили для ячеек */
 .cell {
+  position: relative;
+  transition: transform 0.5s;
   width: 25px;
   height: 25px;
   display: flex;
@@ -177,6 +179,54 @@ button:hover {
 
 .cell.highlight {
   background-color: rgba(0, 255, 0, 0.5);
+}
+
+.cell.shooting {
+  animation: shoot-flash 0.5s ease-in-out;
+  background-color: yellow !important;
+}
+
+.cell.shooting::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background-color: orange;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: particle-burst 0.6s forwards;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 10px 0 orange, -10px 0 orange, 0 10px orange, 0 -10px orange,
+    7px 7px orange, -7px 7px orange, 7px -7px orange, -7px -7px orange;
+}
+
+@keyframes particle-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2);
+  }
+}
+
+@keyframes shoot-flash {
+  0% {
+    background-color: yellow;
+    transform: scale(1);
+  }
+  50% {
+    background-color: orange;
+    transform: scale(1.2);
+  }
+  100% {
+    background-color: yellow;
+    transform: scale(1);
+  }
 }
 
 /* Состояние активного выстрела */
@@ -215,6 +265,30 @@ button:hover {
   background-color: #9b59b6;
 }
 
+/* Battle log */
+
+.battle-log {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #111;
+  color: #0f0;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-family: monospace;
+}
+
+.battle-log ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.battle-log li {
+  padding: 2px 0;
+}
+
+/* Media */
 @media (max-width: 768px) {
   .redact__wrap {
     flex-direction: column;

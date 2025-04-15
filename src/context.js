@@ -11,8 +11,9 @@ export const Provider = ({ children }) => {
   const [enemies, setEnemies] = useState([]); // [{name: Player 2, board : {new Board}, turnIndex: 0}, {...}]
   const [wss, setWss] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState();
-  const [turnIndex, setTurnIndex] = useState(0);
+  const [turnIndex, setTurnIndex] = useState();
   const [isAuthenticated, setIsAuthenticated] = useState(!!nickname);
+  const [globalTurn, setGlobalTurn] = useState(0);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:4000");
@@ -79,6 +80,8 @@ export const Provider = ({ children }) => {
         setIsAuthenticated,
         turnIndex,
         setTurnIndex,
+        globalTurn,
+        setGlobalTurn,
       }}
     >
       {children}

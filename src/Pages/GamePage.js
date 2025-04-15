@@ -17,21 +17,25 @@ const GamePage = () => {
     wss,
     isMyTurn,
     setIsMyTurn,
+    globalTurn,
+    setGlobalTurn,
+    turnIndex,
+    setTurnIndex,
   } = useContext(context);
 
   const navigate = useNavigate();
 
-  const [turnIndex, setTurnIndex] = useState(0);
   const [victory, setVictory] = useState(null);
+  const [battleLog, setBattleLog] = useState([]);
 
   useEffect(() => {
-    console.log(`Turn index = ${turnIndex} \nIs my turn = ${isMyTurn}`);
-  }, [isMyTurn, turnIndex]);
+    console.log(
+      `Turn index = ${turnIndex} \nIs my turn = ${isMyTurn}\nGlobal Turn = ${globalTurn}`
+    );
+  }, [isMyTurn, turnIndex, globalTurn]);
 
   function shoot(target, x, y) {
     if (!isMyTurn || victory) return;
-
-    console.log("Shoot");
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -47,6 +51,13 @@ const GamePage = () => {
 
   function handleShoot(type, payload) {
     const { shooter, target, x, y } = payload;
+
+    const resultText = type === "hit" ? "Hit" : "Miss";
+
+    setBattleLog((prevLog) => [
+      { text: `${shooter} => ${target} at (${x}, ${y}) -- ${resultText}` },
+      ...prevLog,
+    ]);
 
     if (shooter === nickname) {
       console.log(`My name is ${nickname}, and I am a shooter`);
@@ -109,19 +120,25 @@ const GamePage = () => {
   }
 
   function handleChangeTurn(payload) {
-    const nextTurn = payload.turnIndex;
-    setTurnIndex(nextTurn);
+    console.log(`Handle Change Turn\n`);
+    console.log("Payload global turn = ", payload.globalTurn);
+    console.log("Turn index = ", turnIndex);
+
+    // const nextTurn = payload.globalTurn;
+    setGlobalTurn(payload.globalTurn);
 
     if (!enemies || !enemies.length) {
       console.warn("Список противников ещё не инициализирован");
       return;
     }
 
-    // Собираем всех игроков (включая себя)
-    const allPlayers = [nickname, ...enemies.map((e) => e.name)];
+    setIsMyTurn(payload.globalTurn === turnIndex);
 
-    const currentPlayer = allPlayers[nextTurn];
-    setIsMyTurn(currentPlayer === nickname);
+    // Собираем всех игроков (включая себя)
+    // const allPlayers = [nickname, ...enemies.map((e) => e.name)];
+
+    // const currentPlayer = allPlayers[nextTurn];
+    // setIsMyTurn(currentPlayer === nickname);
   }
 
   function getNextTurnIndex(currentIndex, playersList) {
@@ -202,6 +219,15 @@ const GamePage = () => {
 
       <div className="stats">
         <GameState isMyTurn={isMyTurn} victory={victory} />
+        <div className="battle-log">
+          <h3>Battle Log</h3>
+
+          <ul>
+            {battleLog.map((log, index) => {
+              return <li key={index}>{log.text}</li>;
+            })}
+          </ul>
+        </div>
         <button onClick={() => navigate("/")}>Log out</button>
       </div>
     </div>

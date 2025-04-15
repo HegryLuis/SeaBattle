@@ -20,6 +20,7 @@ const LoginPage = () => {
     setEnemies,
     setTurnIndex,
     setIsMyTurn,
+    setGlobalTurn,
   } = useContext(context);
 
   const navigate = useNavigate();
@@ -33,7 +34,12 @@ const LoginPage = () => {
     }
 
     Cookies.set("nickname", username, { expires: 1 });
+
+    // Cookies.set("globalTurn", globalTurn, { expires: 1 });
+    console.log("Turn index in Login page = ", turnIndex);
+    console.log("Global turn in Login page = ", globalTurn);
     setTurnIndex(turnIndex);
+    setGlobalTurn(globalTurn);
 
     const updatedEnemies = opponents.map((enemy) => {
       return {
@@ -64,8 +70,6 @@ const LoginPage = () => {
 
       if (type === "gameStarted") {
         handleStartGame(payload);
-        // console.log("Game started! Navigating to /game/" + gameID);
-
         navigate("/game/" + gameID);
       }
 
