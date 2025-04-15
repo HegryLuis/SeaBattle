@@ -21,6 +21,11 @@ const BoardComponent = ({
     setBoard(board.getCopyBoard());
   }
 
+  if (!board || !Array.isArray(board.cells)) {
+    console.error("board или board.cells не валиден:", board);
+    return null;
+  }
+
   return (
     <div className={`board ${canShoot ? "active-shoot " : ""}`}>
       {board.cells.map((row, rowIndex) => (

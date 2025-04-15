@@ -17,17 +17,15 @@ const LoginPage = () => {
     myBoard,
     wss,
     isAuthenticated,
-    enemies,
     setEnemies,
     setTurnIndex,
+    setIsMyTurn,
   } = useContext(context);
 
   const navigate = useNavigate();
 
   function handleStartGame(payload) {
-    console.log("🚀 handleStartGame called with payload:", payload);
-
-    const { username, opponents = [], turnIndex } = payload;
+    const { username, opponents = [], turnIndex, globalTurn } = payload;
 
     if (!Array.isArray(opponents)) {
       console.error("Некоректний формат opponents:", opponents);
@@ -41,11 +39,12 @@ const LoginPage = () => {
       return {
         name: enemy.name,
         turnIndex: enemy.turnIndex,
-        board: new Board().getCopyBoard(),
+        board: new Board(),
       };
     });
 
     setEnemies(updatedEnemies);
+    setIsMyTurn(turnIndex === globalTurn);
   }
 
   useEffect(() => {
@@ -62,7 +61,6 @@ const LoginPage = () => {
 
     const handleMessage = (res) => {
       const { type, payload } = JSON.parse(res.data);
-      console.log(`Received message: ${type}`, payload); // Дебаг
 
       if (type === "gameStarted") {
         handleStartGame(payload);

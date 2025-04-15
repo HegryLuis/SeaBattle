@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Board } from "../Models/Board";
 import BoardComponent from "../Components/BoardComponent";
 import GameState from "../Components/GameState";
 import { context } from "../context";
+import { Damage } from "../marks/Damage";
+import { Miss } from "../marks/Miss";
 
 const GamePage = () => {
   const { gameID } = useParams();
@@ -23,8 +24,14 @@ const GamePage = () => {
   const [turnIndex, setTurnIndex] = useState(0);
   const [victory, setVictory] = useState(null);
 
+  useEffect(() => {
+    console.log(`Turn index = ${turnIndex} \nIs my turn = ${isMyTurn}`);
+  }, [isMyTurn, turnIndex]);
+
   function shoot(target, x, y) {
     if (!isMyTurn || victory) return;
+
+    console.log("Shoot");
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -42,27 +49,61 @@ const GamePage = () => {
     const { shooter, target, x, y } = payload;
 
     if (shooter === nickname) {
-      setEnemies((prev) => {
-        prev.map((enemy) => {
-          if (enemy.name === target) {
-            const boardCopy = [...enemy.board];
-            boardCopy[y][x].mark.name = type === "hit" ? "hit" : "miss";
-            return { ...enemy, board: boardCopy };
+      console.log(`My name is ${nickname}, and I am a shooter`);
+      // Мы стреляли
+      setEnemies((prevEnemy) =>
+        prevEnemy.map((enemy) => {
+          if (enemy.name === target && enemy.board?.cells) {
+            // Копируем доску (массив клеток)
+            const newBoard = enemy.board.getCopyBoard();
+            const cell = newBoard.cells[y][x];
+
+            if (type == "hit") {
+              cell.mark = new Damage(cell);
+            } else {
+              cell.mark = new Miss(cell);
+            }
+
+            return {
+              ...enemy,
+              board: newBoard,
+            };
           }
+
+          return enemy;
+        })
+      );
+    } else if (target === nickname) {
+      console.log(`My name is ${nickname}, and I have been shot`);
+      // По нам стреляли
+      setMyBoard((prevBoard) => {
+        const newBoard = prevBoard.getCopyBoard();
+        const cell = newBoard.cells[y][x];
+
+        if (type === "hit") {
+          cell.mark = new Damage(cell);
+        } else {
+          cell.mark = new Miss(cell);
+        }
+        return newBoard;
+      });
+    } else {
+      // Мы наблюдаем перестрелку других
+      console.log(`My name is ${nickname}, and I saw the shoot`);
+
+      setEnemies((prevEnemies) => {
+        return prevEnemies.map((enemy) => {
+          if (enemy.name === target && enemy?.board.cells) {
+            const newBoard = enemy.board.getCopyBoard();
+            const cell = newBoard.cells[y][x];
+
+            cell.mark = type === "hit" ? new Damage(cell) : new Miss(cell);
+
+            return { ...enemy, board: newBoard };
+          }
+
           return enemy;
         });
-      });
-      // setEnemyBoards((prev) => {
-      //   const newBoard = { ...prev };
-      //   newBoard[target] = [...prev[target]];
-      //   newBoard[target][y][x].mark.name = type === "hit" ? "hit" : "miss";
-      //   return newBoard;
-      // });
-    } else if (target === nickname) {
-      setMyBoard((prev) => {
-        const newBoard = prev.getCopyBoard();
-        newBoard[y][x].mark.name = type === "hit" ? "hit" : "miss";
-        return newBoard;
       });
     }
   }
@@ -98,21 +139,14 @@ const GamePage = () => {
       const { username, x, y } = payload;
 
       switch (type) {
-        // case "gameStarted":
-        //   handleStartGame(payload);
-        //   break;
-
         case "hit":
         case "miss":
+          console.log("Type =", type);
           handleShoot(type, payload);
           break;
 
         case "changeTurn":
           handleChangeTurn(payload);
-          // setIsMyTurn(players[payload.turnIndex] === nickname);
-          break;
-
-        case "connectToPlay":
           break;
 
         case "victory":
@@ -130,10 +164,6 @@ const GamePage = () => {
     };
   }, [wss, nickname]);
 
-  useEffect(() => {
-    console.log(`Enemies => `, enemies);
-  }, [enemies]);
-
   return (
     <div className="wrap wrap-game">
       <h1 className="game-title">Battle has begun!</h1>
@@ -149,40 +179,25 @@ const GamePage = () => {
           />
         </div>
 
-        {enemies
-          .filter((e) => e.name !== nickname)
-          .map((enemy, i) => {
-            return (
-              <div key={enemy.name}>
-                <p className="nickname">{enemy.name}</p>
-                <BoardComponent
-                  board={enemy.board}
-                  setBoard={(newBoard) => {
-                    setEnemies((prev) =>
-                      prev.map((e) =>
-                        e.name === enemy.name ? { ...e, board: newBoard } : e
-                      )
-                    );
-                  }}
-                  canShoot={isMyTurn}
-                  shoot={(x, y) => shoot(enemy.name, x, y)}
-                />
-              </div>
-            );
-          })}
-
-        {/* 
-        {
-          <div>
-            <p className="nickname">{enemyName}</p>
-            <BoardComponent
-              board={enemyBoard}
-              setBoard={setEnemyBoard}
-              canShoot={true}
-              shoot={shoot}
-            />
-          </div>
-        } */}
+        {enemies.map((enemy) => {
+          return (
+            <div key={enemy.name}>
+              <p className="nickname">{enemy.name}</p>
+              <BoardComponent
+                board={enemy.board}
+                setBoard={(newBoard) => {
+                  setEnemies((prev) =>
+                    prev.map((e) =>
+                      e.name === enemy.name ? { ...e, board: newBoard } : e
+                    )
+                  );
+                }}
+                canShoot={isMyTurn}
+                shoot={(x, y) => shoot(enemy.name, x, y)}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <div className="stats">

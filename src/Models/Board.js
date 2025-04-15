@@ -21,21 +21,6 @@ export class Board {
     }
   }
 
-  // cloneMark = (mark) => {
-  //   if (!mark) return null;
-
-  //   switch (mark.constructor.name) {
-  //     case "Ship":
-  //       return new Ship(); // если Ship не требует аргументов
-  //     case "Miss":
-  //       return new Miss();
-  //     case "Damage":
-  //       return new Damage();
-  //     default:
-  //       return null;
-  //   }
-  // };
-
   serialize() {
     return {
       cells: this.cells.map((row) => row.map((cell) => cell.serialize())),

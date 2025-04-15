@@ -15,6 +15,7 @@ function start() {
       if (req.event === "connect") {
         wsClient.username = req.payload.username;
         wsClient.playersNum = req.payload.playersNum;
+        wsClient.board = req.payload.board;
         initGames(wsClient, req.payload.gameID);
       }
 
@@ -48,7 +49,7 @@ function start() {
       games[gameID] = {
         players: [],
         boards: {},
-        turnIndex: 0,
+        globalTurn: 0,
         maxPlayers: parseInt(ws.playersNum) || 2,
         playerTargets: {},
       };
@@ -75,6 +76,8 @@ function start() {
     }
 
     game.players.push({ username: ws.username, ws });
+    // console.log(`ws.board  cells= ${JSON.stringify(ws.board)}`);
+    game.boards[ws.username] = ws.board;
 
     ws.send(
       JSON.stringify({
@@ -129,6 +132,7 @@ function start() {
           username: player.username,
           opponents,
           turnIndex: index,
+          globalTurn: game.globalTurn,
         },
       });
 
@@ -139,23 +143,39 @@ function start() {
             username: player.username,
             opponents,
             turnIndex: index,
+            globalTurn: game.globalTurn,
           },
         })
       );
     });
 
-    game.turnIndex = 0;
+    game.globalTurn = 0;
   }
 
   function processShot({ username, x, y, gameID, target }) {
     const game = games[gameID];
     if (!game) return;
 
+    console.log(
+      `Shoot:\n\tUsername = ${username}\n\tx=${x}, y=${y}\n\tgameID=${gameID}\n\ttarget=${target}`
+    );
+
+    console.log(`Game found`);
     const enemyBoard = game.boards[target];
     if (!enemyBoard) return;
 
-    const cell = enemyBoard[y][x];
+    const cell = enemyBoard.cells[y][x];
+
+    if (!cell) {
+      console.log(`Cell[${y}][${x}] is not found`);
+      return;
+    }
+    if (cell?.mark?.name === "miss" || cell?.mark?.name === "hit") {
+      console.log("You have already shot in this cell ");
+      return;
+    }
     const isHit = cell?.mark?.name === "ship";
+    console.log(`isHit = ${isHit}`);
 
     if (!cell.mark) {
       console.log(`Cell at (${x}, ${y}) has no mark! Creating default mark.`);
@@ -163,8 +183,14 @@ function start() {
     }
 
     cell.mark.name = isHit ? "hit" : "miss";
+    console.log(`cell.mark.name = ${cell.mark.name}`);
 
     game.players.forEach((player) => {
+      console.log(`${player.username}`, "🔼 Отправка gameStarted:", {
+        type: "hit/miss",
+        payload: { shooter: username, target, x, y },
+      });
+
       player.ws.send(
         JSON.stringify({
           type: isHit ? "hit" : "miss",
@@ -173,39 +199,49 @@ function start() {
       );
     });
 
-    if (checkVictory(gameID, target)) {
-      endGame(gameID, username);
-    } else {
-      // nextTurn(gameID);
-      const targetInfo = game.playerTargets[username];
+    game.globalTurn = (game.globalTurn + 1) % game.players.length;
 
-      if (!isHit) {
-        targetInfo.currentTargetIndex++;
+    game.players.forEach((player) => {
+      player.ws.send(
+        JSON.stringify({
+          type: "changeTurn",
+          payload: { turnIndex: game.globalTurn },
+        })
+      );
+    });
 
-        if (targetInfo.currentTargetIndex >= targetInfo.opponents.length) {
-          targetInfo.currentTargetIndex = 0;
-          game.turnIndex = (game.turnIndex + 1) % game.players.length;
-        }
+    // if (checkVictory(gameID, target)) {
+    //   endGame(gameID, username);
+    // } else {
+    // const targetInfo = game.playerTargets[username];
 
-        game.players.forEach((player) => {
-          player.ws.send(
-            JSON.stringify({
-              type: "changeTurn",
-              payload: { turnIndex: game.turnIndex },
-            })
-          );
-        });
-      }
-    }
+    // if (!isHit) {
+    //   targetInfo.currentTargetIndex++;
+
+    //   if (targetInfo.currentTargetIndex >= targetInfo.opponents.length) {
+    //     targetInfo.currentTargetIndex = 0;
+    //     game.globalTurn = (game.globalTurn + 1) % game.players.length;
+    //   }
+
+    //   game.players.forEach((player) => {
+    //     player.ws.send(
+    //       JSON.stringify({
+    //         type: "changeTurn",
+    //         payload: { globalTurn: game.globalTurn },
+    //       })
+    //     );
+    //   });
+    // }
+    // }
   }
 
-  function checkVictory(gameID, target) {
-    const board = games[gameID].boards[target];
-    if (!board) return false;
-    return board.every((row) =>
-      row.every((cell) => cell.mark?.name !== "ship")
-    );
-  }
+  // function checkVictory(gameID, target) {
+  // const board = games[gameID].boards.cells[target];
+  // if (!board) return false;
+  // return board.every((row) =>
+  //   row.every((cell) => cell.mark?.name !== "ship")
+  // );
+  // }
 
   function endGame(gameID, winner) {
     games[gameID].players.forEach((player) => {
@@ -214,172 +250,6 @@ function start() {
 
     delete games[gameID];
   }
-
-  function nextTurn(gameID) {
-    const game = games[gameID];
-    game.turnIndex = (game.turnIndex + 1) % game.players.length;
-
-    game.players.forEach((player) => {
-      player.ws.send(
-        JSON.stringify({
-          type: "changeTurn",
-          payload: { turnIndex: game.turnIndex },
-        })
-      );
-    });
-  }
-
-  // function broadcast(params, wsClient) {
-  //   console.time("broadcast");
-
-  //   let res;
-
-  //   const { username, gameID, board } = params.payload;
-
-  //   games[gameID].players.forEach((client) => {
-  //     switch (params.event) {
-  //       case "connect":
-  //         if (!games[gameID]) {
-  //           games[gameID] = {
-  //             players: [],
-  //             boards: {},
-  //           };
-  //         }
-
-  //         if (!games[gameID].players.find((p) => p.username === username)) {
-  //           games[gameID].players.push({ username, ws: wsClient });
-  //         }
-
-  //         games[gameID].boards[username] = board.cells;
-
-  //         res = {
-  //           type: "connectToPlay",
-  //           payload: {
-  //             success: true,
-  //             enemyName: games[gameID].players.find(
-  //               (p) => p.username !== username
-  //             )?.username,
-  //             username: username,
-  //             isMyTurn: games[gameID].players[0].username === username,
-  //           },
-  //         };
-  //         break;
-
-  //       case "ready":
-  //         games[gameID].boards[username] = params.payload.board;
-
-  //         res = {
-  //           type: "readyToPlay",
-  //           payload: {
-  //             canStart: Object.keys(games[gameID].boards).length === 2,
-  //             username,
-  //           },
-  //         };
-  //         break;
-
-  //       case "shoot":
-  //         if (!games[gameID]) {
-  //           console.log(`Game ${gameID} not found!`);
-  //           return;
-  //         }
-
-  //         const enemy = games[gameID].players.find(
-  //           (player) => player.username !== username
-  //         );
-  //         if (!enemy) {
-  //           console.log("Enemy not found!");
-  //           return;
-  //         }
-
-  //         const { x, y } = params.payload;
-
-  //         const enemyBoard = games[gameID].boards?.[enemy.username];
-  //         if (!enemyBoard) {
-  //           console.log(`Board for enemy ${enemy.username} not found!`);
-  //           return;
-  //         }
-
-  //         const cell = enemyBoard[y]?.[x]; // Get cell
-
-  //         if (!cell) {
-  //           console.log(`Cell at (${x}, ${y}) not found!`);
-  //           return;
-  //         }
-
-  //         if (!cell.mark) {
-  //           console.log(
-  //             `Cell at (${x}, ${y}) has no mark! Creating default mark.`
-  //           );
-  //           cell.mark = { name: "empty" }; // Add empty mark
-  //         }
-
-  //         const isPerfectHit =
-  //           cell?.mark?.name === "ship" || cell?.mark?.name === "hit"; // Shoot check
-
-  //         if (cell.mark) {
-  //           cell.mark.name = isPerfectHit ? "hit" : "miss";
-  //         }
-
-  //         // Victory search
-  //         // если больше нет кораблей -> вывести на консоль имя победителя
-  //         let hasShipsLeft = false;
-  //         for (let row of enemyBoard) {
-  //           for (let cell of row) {
-  //             if (cell.mark?.name === "ship") {
-  //               hasShipsLeft = true;
-  //               break;
-  //             }
-  //           }
-  //         }
-
-  //         if (!hasShipsLeft) {
-  //           console.log(`\nPlayer ${username} wins!`);
-  //           games[gameID].players.forEach((player) => {
-  //             player.ws.send(
-  //               JSON.stringify({
-  //                 type: "victory",
-  //                 payload: { winner: username },
-  //               })
-  //             );
-  //           });
-  //         }
-
-  //         res = {
-  //           type: isPerfectHit ? "hit" : "miss",
-  //           payload: { username, x, y },
-  //         };
-
-  //         if (!isPerfectHit) {
-  //           games[gameID].turn = enemy.username;
-
-  //           games[gameID].players.forEach((player) => {
-  //             player.ws.send(
-  //               JSON.stringify({
-  //                 type: "changeTurn",
-  //                 payload: { nextTurn: enemy.username, x, y },
-  //               })
-  //             );
-  //           });
-  //         }
-
-  //         break;
-
-  //       default:
-  //         res = { type: "logout", payload: params.payload };
-  //         break;
-  //     }
-
-  //     games[gameID].players.forEach((client) => {
-  //       if (typeof client.ws.send !== "function") {
-  //         console.error("client.ws не является WebSocket:", client);
-  //       } else {
-  //         client.ws.send(JSON.stringify(res));
-  //       }
-  //     });
-  //   });
-
-  //   console.timeEnd("broadcast");
-  // }
 }
 
 start();
