@@ -27,23 +27,30 @@ const GamePage = () => {
 
   const [victory, setVictory] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
+  const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
 
   useEffect(() => {
-    console.log(
-      `Turn index = ${turnIndex} \nIs my turn = ${isMyTurn}\nGlobal Turn = ${globalTurn}`
-    );
-  }, [isMyTurn, turnIndex, globalTurn]);
+    if (isMyTurn) {
+      setCurrentTargetIndex(0);
+    }
+  }, [isMyTurn]);
 
-  function shoot(target, x, y) {
+  function shoot(x, y) {
     if (!isMyTurn || victory) return;
+
+    const currEnemy = enemies[currentTargetIndex];
+    if (!currEnemy) return;
+
+    const target = currEnemy.name;
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
         JSON.stringify({
           event: "shoot",
-          payload: { username: nickname, x, y, gameID, target },
+          payload: { username: nickname, x, y, gameID },
         })
       );
+      setCurrentTargetIndex((prev) => prev + 1);
     } else {
       console.error("WebSocket не открыт. Состояние:", wss.readyState);
     }
@@ -197,6 +204,7 @@ const GamePage = () => {
         </div>
 
         {enemies.map((enemy) => {
+          const currEnemy = enemies[currentTargetIndex] || null;
           return (
             <div key={enemy.name}>
               <p className="nickname">{enemy.name}</p>
@@ -209,8 +217,10 @@ const GamePage = () => {
                     )
                   );
                 }}
-                canShoot={isMyTurn}
-                shoot={(x, y) => shoot(enemy.name, x, y)}
+                canShoot={
+                  isMyTurn && currEnemy && currEnemy.name === enemy.name
+                }
+                shoot={(x, y) => shoot(x, y)}
               />
             </div>
           );

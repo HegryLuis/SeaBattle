@@ -50,6 +50,7 @@ function start() {
         globalTurn: 0,
         maxPlayers: parseInt(ws.playersNum) || 2,
         playerTargets: {},
+        playerShotsLeft: {},
       };
       console.log(`Game ${gameID} created`);
     }
@@ -116,22 +117,8 @@ function start() {
         opponents: opponents.map((op) => op.name),
         currentTargetIndex: 0,
       };
-      console.log(`🔸 Sending "gameStarted" to ${player.username}`);
 
-      // console.log(`\n\nInformation: \n\tPlayer name : ${player.username}\n
-      //     Opponents : ${JSON.stringify(opponents, null, 2)}\n
-      //     Turn Index : ${index}\n
-      //   `);
-
-      // console.log("🔼 Отправка gameStarted:", {
-      //   type: "gameStarted",
-      //   payload: {
-      //     username: player.username,
-      //     opponents,
-      //     turnIndex: index,
-      //     globalTurn: game.globalTurn,
-      //   },
-      // });
+      game.playerShotsLeft[player.username] = opponents.length;
 
       player.ws.send(
         JSON.stringify({
@@ -149,9 +136,13 @@ function start() {
     game.globalTurn = 0;
   }
 
-  function processShot({ username, x, y, gameID, target }) {
+  function processShot({ username, x, y, gameID }) {
     const game = games[gameID];
     if (!game) return;
+
+    const playerTargetData = game.playerTargets[username];
+    const target =
+      playerTargetData.opponents[playerTargetData.currentTargetIndex];
 
     const enemyBoard = game.boards[target];
     if (!enemyBoard) return;
@@ -166,13 +157,13 @@ function start() {
       console.log("You have already shot in this cell ");
       return;
     }
-    const isHit = cell?.mark?.name === "ship";
+    const isHit = cell?.mark?.name === "ship"; // Check is hit
 
     if (!cell.mark) {
       cell.mark = { name: "empty" }; // Add empty mark
     }
 
-    cell.mark.name = isHit ? "hit" : "miss";
+    cell.mark.name = isHit ? "hit" : "miss"; // change cell`s mark
 
     game.players.forEach((player) => {
       // console.log(`${player.username}`, "🔼 Отправка gameStarted:", {
@@ -188,16 +179,25 @@ function start() {
       );
     });
 
-    game.globalTurn = (game.globalTurn + 1) % game.players.length;
+    playerTargetData.currentTargetIndex++;
 
-    game.players.forEach((player) => {
-      player.ws.send(
-        JSON.stringify({
-          type: "changeTurn",
-          payload: { globalTurn: game.globalTurn },
-        })
-      );
-    });
+    if (
+      playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
+    ) {
+      playerTargetData.currentTargetIndex = 0;
+
+      //turn change
+      game.globalTurn = (game.globalTurn + 1) % game.players.length;
+
+      game.players.forEach((player) => {
+        player.ws.send(
+          JSON.stringify({
+            type: "changeTurn",
+            payload: { globalTurn: game.globalTurn },
+          })
+        );
+      });
+    }
   }
 
   function endGame(gameID, winner) {
