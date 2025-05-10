@@ -17,10 +17,8 @@ const GamePage = () => {
     wss,
     isMyTurn,
     setIsMyTurn,
-    globalTurn,
     setGlobalTurn,
     turnIndex,
-    setTurnIndex,
   } = useContext(context);
 
   const navigate = useNavigate();
@@ -28,6 +26,8 @@ const GamePage = () => {
   const [victory, setVictory] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
   const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
+  const [hasLost, setHasLost] = useState(false);
+  const [defeatedPlayers, setDefeatedPlayers] = useState([]);
 
   useEffect(() => {
     if (isMyTurn) {
@@ -38,10 +38,9 @@ const GamePage = () => {
   function shoot(x, y) {
     if (!isMyTurn || victory) return;
 
+    console.log("Shoot");
     const currEnemy = enemies[currentTargetIndex];
-    if (!currEnemy) return;
-
-    const target = currEnemy.name;
+    if (!currEnemy || defeatedPlayers.includes(currEnemy.name)) return;
 
     if (wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -67,7 +66,6 @@ const GamePage = () => {
     ]);
 
     if (shooter === nickname) {
-      console.log(`My name is ${nickname}, and I am a shooter`);
       // Мы стреляли
       setEnemies((prevEnemy) =>
         prevEnemy.map((enemy) => {
@@ -76,7 +74,7 @@ const GamePage = () => {
             const newBoard = enemy.board.getCopyBoard();
             const cell = newBoard.cells[y][x];
 
-            if (type == "hit") {
+            if (type === "hit") {
               cell.mark = new Damage(cell);
             } else {
               cell.mark = new Miss(cell);
@@ -92,7 +90,6 @@ const GamePage = () => {
         })
       );
     } else if (target === nickname) {
-      console.log(`My name is ${nickname}, and I have been shot`);
       // По нам стреляли
       setMyBoard((prevBoard) => {
         const newBoard = prevBoard.getCopyBoard();
@@ -107,8 +104,6 @@ const GamePage = () => {
       });
     } else {
       // Мы наблюдаем перестрелку других
-      console.log(`My name is ${nickname}, and I saw the shoot`);
-
       setEnemies((prevEnemies) => {
         return prevEnemies.map((enemy) => {
           if (enemy.name === target && enemy?.board.cells) {
@@ -127,11 +122,6 @@ const GamePage = () => {
   }
 
   function handleChangeTurn(payload) {
-    console.log(`Handle Change Turn\n`);
-    console.log("Payload global turn = ", payload.globalTurn);
-    console.log("Turn index = ", turnIndex);
-
-    // const nextTurn = payload.globalTurn;
     setGlobalTurn(payload.globalTurn);
 
     if (!enemies || !enemies.length) {
@@ -140,16 +130,6 @@ const GamePage = () => {
     }
 
     setIsMyTurn(payload.globalTurn === turnIndex);
-
-    // Собираем всех игроков (включая себя)
-    // const allPlayers = [nickname, ...enemies.map((e) => e.name)];
-
-    // const currentPlayer = allPlayers[nextTurn];
-    // setIsMyTurn(currentPlayer === nickname);
-  }
-
-  function getNextTurnIndex(currentIndex, playersList) {
-    return (currentIndex + 1) % playersList.length;
   }
 
   useEffect(() => {
@@ -160,7 +140,6 @@ const GamePage = () => {
 
     wss.onmessage = function (response) {
       const { type, payload } = JSON.parse(response.data);
-      const { username, x, y } = payload;
 
       switch (type) {
         case "hit":
@@ -172,6 +151,32 @@ const GamePage = () => {
         case "changeTurn":
           handleChangeTurn(payload);
           break;
+
+        case "playerLost": {
+          const { username } = payload;
+
+          // Добавим в battle log (если у тебя он есть)
+          setBattleLog((prev) => [
+            ...prev,
+            { type: "playerLost", text: `${username} has been eliminated.` },
+          ]);
+
+          // Можно пометить врага как выбывшего (например, чтобы отключить по нему стрельбу или затемнить доску)
+          setDefeatedPlayers((prev) => [...prev, username]);
+
+          break;
+        }
+
+        case "youLost": {
+          setHasLost(true); // например, флаг в состоянии
+          setBattleLog((prev) => [
+            ...prev,
+            { type: "defeat", message: `You have lost the game.` },
+          ]);
+
+          // Можно отключить интерфейс игрока
+          break;
+        }
 
         case "victory":
           setVictory(payload.winner);
@@ -187,6 +192,10 @@ const GamePage = () => {
       wss.onmessage = null;
     };
   }, [wss, nickname]);
+
+  useEffect(() => {
+    console.log(victory);
+  }, [victory]);
 
   return (
     <div className="wrap wrap-game">
@@ -205,8 +214,13 @@ const GamePage = () => {
 
         {enemies.map((enemy) => {
           const currEnemy = enemies[currentTargetIndex] || null;
+          const isDefeated = defeatedPlayers.includes(enemy.name);
+
           return (
-            <div key={enemy.name}>
+            <div
+              key={enemy.name}
+              className={`enemy-board ${isDefeated ? "defeated" : ""}`}
+            >
               <p className="nickname">{enemy.name}</p>
               <BoardComponent
                 board={enemy.board}
@@ -218,7 +232,11 @@ const GamePage = () => {
                   );
                 }}
                 canShoot={
-                  isMyTurn && currEnemy && currEnemy.name === enemy.name
+                  isMyTurn &&
+                  currEnemy &&
+                  currEnemy.name === enemy.name &&
+                  !hasLost &&
+                  !isDefeated
                 }
                 shoot={(x, y) => shoot(x, y)}
               />
@@ -229,6 +247,13 @@ const GamePage = () => {
 
       <div className="stats">
         <GameState isMyTurn={isMyTurn} victory={victory} />
+        {hasLost && (
+          <div className="overlay">
+            <h2>You lost!</h2>
+            <p>Better luck next time!</p>
+          </div>
+        )}
+
         <div className="battle-log">
           <h3>Battle Log</h3>
 
