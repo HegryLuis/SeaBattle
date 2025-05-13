@@ -1,9 +1,9 @@
-import React, { useContext } from "react";
+import React from "react";
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
 import GamePage from "./Pages/GamePage";
-import { context, Provider } from "./context";
+import { Provider } from "./context";
 import Background from "./Components/Background/Background";
 import AuthPage from "./Pages/AuthPage";
 import ProtectedRoute from "./hoc/ProtectedRoute";

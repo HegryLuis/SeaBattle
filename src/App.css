@@ -273,14 +273,23 @@ button:hover {
 /* Battle log */
 
 .battle-log {
-  max-height: 200px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  max-height: 300px;
   overflow-y: auto;
-  background: #111;
-  color: #0f0;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 20px;
-  font-family: monospace;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  color: #212529;
+}
+
+.battle-log h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #343a40;
 }
 
 .battle-log ul {
@@ -290,7 +299,32 @@ button:hover {
 }
 
 .battle-log li {
-  padding: 2px 0;
+  padding: 6px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.battle-log li:last-child {
+  border-bottom: none;
+}
+
+.battle-log li span.player {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.battle-log li span.target {
+  font-weight: bold;
+  color: #dc3545;
+}
+
+.battle-log li span.result-hit {
+  color: green;
+  font-weight: bold;
+}
+
+.battle-log li span.result-miss {
+  color: gray;
+  font-weight: normal;
 }
 
 /* Media */
@@ -328,5 +362,66 @@ button:hover {
 
   .boards-wrap {
     flex-direction: column-reverse;
+  }
+}
+
+.login-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #0a2a43;
+  padding: 20px;
+}
+
+.login-page h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  color: #fff;
+  text-shadow: 0 0 10px #3ab0ff;
+}
+
+.login-page input[type="text"],
+.login-page input[type="password"] {
+  width: 300px;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #bebebe;
+  color: #000;
+  outline: none;
+  transition: box-shadow 0.3s;
+}
+
+.login-page input:focus {
+  box-shadow: 0 0 10px #3ab0ff;
+}
+
+.login-page button {
+  width: 300px;
+  padding: 12px;
+  background-color: #3ab0ff;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.login-page button:hover {
+  background-color: #1e90ff;
+}
+
+@media (max-width: 480px) {
+  .login-page input[type="text"],
+  .login-page input[type="password"],
+  .login-page button {
+    width: 90%;
   }
 }

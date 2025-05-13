@@ -6,25 +6,45 @@ import Cookies from "js-cookie";
 const AuthPage = () => {
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
   const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
   const { setIsAuthenticated, setNickname: setGlobalNickname } =
     useContext(context);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // Перевірка на правильність даних (можна зробити більш складну перевірку або інтегрувати API)
-    if (nickname && password) {
-      Cookies.set("nickname", nickname, { expires: 1 });
-      setGlobalNickname(nickname); // Зберігаємо ніком в глобальний контекст
-      setIsAuthenticated(true); // Змінюємо статус авторизації
-      navigate("/game"); // Переходимо на головну сторінку гри
-    } else {
-      alert("Please provide valid login credentials.");
+  const handleAuth = async () => {
+    const endpoint = isRegistering ? "register" : "login";
+
+    try {
+      const response = await fetch(
+        `http://localhost:4001/api/auth/${endpoint}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: nickname, password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Зберігаємо токен і нікнейм
+        Cookies.set("token", data.token, { expires: 1 });
+        Cookies.set("nickname", nickname, { expires: 1 });
+
+        setGlobalNickname(nickname);
+        setIsAuthenticated(true);
+        navigate("/game");
+      } else {
+        alert(data.msg || `${isRegistering ? "Registration" : "Login"} failed`);
+      }
+    } catch (err) {
+      alert("Server error");
     }
   };
 
   return (
     <div className="login-page">
-      <h1>Login</h1>
+      <h1>{isRegistering ? "Register" : "Login"}</h1>
       <input
         type="text"
         placeholder="Nickname"
@@ -37,7 +57,12 @@ const AuthPage = () => {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleAuth}>
+        {isRegistering ? "Register" : "Login"}
+      </button>
+      <button onClick={() => setIsRegistering(!isRegistering)}>
+        {isRegistering ? "Switch to Login" : "Switch to Register"}
+      </button>
     </div>
   );
 };

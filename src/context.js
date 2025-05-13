@@ -49,16 +49,16 @@ export const Provider = ({ children }) => {
   }, [nickname]);
 
   const ships = [
-    // { x: 0, y: 0, size: 4, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 0, y: 0, size: 4, orientation: "horizontal" },
+    { x: 5, y: 5, size: 3, orientation: "horizontal" },
+    { x: 5, y: 5, size: 3, orientation: "horizontal" },
     { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal" },
   ];
 
   return (

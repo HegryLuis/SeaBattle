@@ -1,9 +1,31 @@
 const WebSocket = require("ws");
 const connectDB = require("./database");
+const express = require("express");
+const authRoutes = require("./routes/auth");
+const cors = require("cors");
 
+const app = express();
 const PORT = 4000;
+const BACKEND_PORT = 4001;
+
+const corsOptions = {
+  origin: "http://localhost:3000", // Allow only this origin
+  methods: ["GET", "POST", "PUT", "DELETE"], // Allow these HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
+};
+
+app.use(cors(corsOptions));
+
+app.use(express.json());
+
 const games = {}; // { gameID: { players: [], boards: {}, turnIndex: 0 } }
 connectDB();
+
+app.use("/api/auth", authRoutes);
+
+app.listen(BACKEND_PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${BACKEND_PORT}`);
+});
 
 function start() {
   const wss = new WebSocket.Server({ port: PORT }, () => {
