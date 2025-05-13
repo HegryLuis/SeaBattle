@@ -1,12 +1,24 @@
 const mongoose = require("mongoose");
 
+const cellSchema = new mongoose.Schema({
+  mark: {
+    name: String,
+  },
+});
+
+const boardSchema = new mongoose.Schema({
+  username: String,
+  cells: [[cellSchema]],
+});
+
 const gameSchema = new mongoose.Schema({
-  players: [String], // usernames
-  boards: mongoose.Schema.Types.Mixed,
-  logs: [String], // battle logs
+  gameID: String,
+  players: [String],
+  boards: [boardSchema],
   winner: String,
   startedAt: Date,
   endedAt: Date,
+  logs: [String],
 });
 
 module.exports = mongoose.model("Game", gameSchema);

@@ -27,7 +27,6 @@ const AuthPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Зберігаємо токен і нікнейм
         Cookies.set("token", data.token, { expires: 1 });
         Cookies.set("nickname", nickname, { expires: 1 });
 

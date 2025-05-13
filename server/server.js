@@ -2,6 +2,7 @@ const WebSocket = require("ws");
 const connectDB = require("./database");
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const GameModel = require("./models/Game");
 const cors = require("cors");
 
 const app = express();
@@ -9,9 +10,9 @@ const PORT = 4000;
 const BACKEND_PORT = 4001;
 
 const corsOptions = {
-  origin: "http://localhost:3000", // Allow only this origin
-  methods: ["GET", "POST", "PUT", "DELETE"], // Allow these HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
@@ -119,6 +120,8 @@ function start() {
 
   function startGame(gameID) {
     const game = games[gameID];
+    game.startedAt = new Date();
+    game.logs = []; // если планируешь писать логи событий
 
     console.log(`
       🔹 Starting game ${gameID} with players:,
@@ -346,7 +349,29 @@ function start() {
     );
   }
 
-  function endGame(gameID, winner) {
+  async function endGame(gameID, winner) {
+    const game = games[gameID];
+
+    const gameData = new GameModel({
+      gameID,
+      players: game.players.map((p) => p.username),
+      boards: game.players.map((p) => ({
+        username: p.username,
+        cells: game.boards[p.username].cells,
+      })),
+      winner,
+      startedAt: game.startedAt || new Date(Date.now() - 1000 * 60 * 5),
+      endedAt: new Date(),
+      logs: game.logs || [],
+    });
+
+    try {
+      await gameData.save();
+      console.log(`✅ Game ${gameID} saved to database`);
+    } catch (err) {
+      console.error(`❌ Failed to save game ${gameID}:`, err);
+    }
+
     games[gameID].players.forEach((player) => {
       player.ws.send(JSON.stringify({ type: "victory", payload: { winner } }));
     });

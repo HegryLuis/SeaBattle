@@ -40,12 +40,6 @@ router.post("/register", async (req, res) => {
   if (!username || !password)
     return res.status(400).json({ msg: "All fields are required" });
 
-  //   // Сохраняем пользователя в базе данных
-  //   await newUser.save();
-
-  //   // Ответ при успешной регистрации
-  //   res.status(201).json({ message: "User registered successfully" });
-
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser)
@@ -59,7 +53,7 @@ router.post("/register", async (req, res) => {
     );
     res.status(201).json({ token, username: newUser.username });
   } catch (err) {
-    console.error("Registration error:", err); // Логируем ошибку на сервере
+    console.error("Registration error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });

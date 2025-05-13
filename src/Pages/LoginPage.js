@@ -4,6 +4,7 @@ import { context } from "../context";
 import RedactComponent from "../Components/RedactComponent";
 import { Board } from "../Models/Board";
 import Cookies from "js-cookie";
+import { v4 as uuidv4 } from "uuid";
 
 const LoginPage = () => {
   const [invitationGame, setInvitationGame] = useState();
@@ -15,6 +16,7 @@ const LoginPage = () => {
     gameID,
     setGameID,
     myBoard,
+    setMyBoard,
     wss,
     isAuthenticated,
     setEnemies,
@@ -24,6 +26,11 @@ const LoginPage = () => {
   } = useContext(context);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setGameID("");
+    setMyBoard(new Board());
+  }, []);
 
   function handleStartGame(payload) {
     const { username, opponents = [], turnIndex, globalTurn } = payload;
@@ -35,9 +42,6 @@ const LoginPage = () => {
 
     Cookies.set("nickname", username, { expires: 1 });
 
-    // Cookies.set("globalTurn", globalTurn, { expires: 1 });
-    console.log("Turn index in Login page = ", turnIndex);
-    console.log("Global turn in Login page = ", globalTurn);
     setTurnIndex(turnIndex);
     setGlobalTurn(globalTurn);
 
@@ -175,7 +179,7 @@ const LoginPage = () => {
                       className="btn-gen"
                       onClick={(e) => {
                         e.preventDefault();
-                        setGameID(Date.now());
+                        setGameID(uuidv4());
                       }}
                     >
                       Generate game ID
