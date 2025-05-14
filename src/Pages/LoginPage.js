@@ -213,6 +213,8 @@ const LoginPage = () => {
             <RedactComponent setShipsPlaced={setShipsPlaced} />
           </div>
 
+          <button onClick={() => navigate("/history")}>See Game History</button>
+
           {!shipsPlaced ? (
             <div className="redacting-status">
               <p>Your ships aren`t ready</p>
@@ -230,9 +232,6 @@ const LoginPage = () => {
                 disabled={!shipsPlaced}
               >
                 PLAY NOW!
-              </button>
-              <button onClick={() => navigate("/history")}>
-                See Game History
               </button>
             </div>
           )}

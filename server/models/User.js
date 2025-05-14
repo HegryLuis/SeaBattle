@@ -8,10 +8,9 @@ const UserSchema = new mongoose.Schema({
   totalGames: { type: Number, default: 0 },
   wins: { type: Number, default: 0 },
 
-  // Додано посилання на ігри, в яких гравець брав участь
   games: [
     {
-      gameId: { type: mongoose.Schema.Types.ObjectId, ref: "Game" }, // Посилання на гру
+      gameId: { type: mongoose.Schema.Types.ObjectId, ref: "Game" },
       score: { type: Number, default: 0 },
       winner: { type: Boolean, default: false },
     },
@@ -26,18 +25,15 @@ UserSchema.pre("save", async function (next) {
   next();
 });
 
-// Порівняння пароля
 UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Обчислення winRate у відсотках (%)
 UserSchema.virtual("winRate").get(function () {
   if (this.totalGames === 0) return 0;
   return (this.wins / this.totalGames) * 100;
 });
 
-// Включити virtuals у JSON-представлення
 UserSchema.set("toJSON", { virtuals: true });
 
 module.exports = mongoose.model("User", UserSchema);
