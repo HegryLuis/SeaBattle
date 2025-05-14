@@ -7,6 +7,7 @@ import { Provider } from "./context";
 import Background from "./Components/Background/Background";
 import AuthPage from "./Pages/AuthPage";
 import ProtectedRoute from "./hoc/ProtectedRoute";
+import GameHistoryPage from "./Pages/GameHistoryPage";
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
                 </ProtectedRoute>
               }
             ></Route>
-            {/* <Route path="/" element={<LoginPage />} /> */}
+            <Route path="/history" element={<GameHistoryPage />} />
           </Routes>
         </BrowserRouter>
       </div>

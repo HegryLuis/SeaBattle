@@ -60,10 +60,7 @@ const GamePage = () => {
 
     const resultText = type === "hit" ? "Hit" : "Miss";
 
-    setBattleLog((prevLog) => [
-      { text: `${shooter} => ${target} at (${x}, ${y}) -- ${resultText}` },
-      ...prevLog,
-    ]);
+    addLogEntry(`${shooter} => ${target} at (${x}, ${y}) -- ${resultText}`);
 
     if (shooter === nickname) {
       // Мы стреляли
@@ -121,6 +118,30 @@ const GamePage = () => {
     }
   }
 
+  const addLogEntry = (message) => {
+    const newLog = { message, timestamp: new Date().toISOString() };
+
+    // setBattleLog((prev) => [...prev, newLog]);
+
+    setBattleLog((prev) => {
+      if (prev.some((log) => log.message === message)) return prev;
+      return [...prev, { message, timestamp: new Date().toISOString() }];
+    });
+
+    if (wss && wss.readyState === WebSocket.OPEN) {
+      wss.send(
+        JSON.stringify({
+          event: "log",
+          payload: {
+            gameID,
+            username: nickname,
+            log: newLog,
+          },
+        })
+      );
+    }
+  };
+
   function handleChangeTurn(payload) {
     setGlobalTurn(payload.globalTurn);
 
@@ -155,26 +176,15 @@ const GamePage = () => {
         case "playerLost": {
           const { username } = payload;
 
-          // Добавим в battle log (если у тебя он есть)
-          setBattleLog((prev) => [
-            ...prev,
-            { type: "playerLost", text: `${username} has been eliminated.` },
-          ]);
+          if (username === nickname) {
+            setHasLost(true);
+            addLogEntry(`You have been eliminated.`);
+          } else {
+            addLogEntry(`${username} has been eliminated.`);
+          }
 
-          // Можно пометить врага как выбывшего (например, чтобы отключить по нему стрельбу или затемнить доску)
           setDefeatedPlayers((prev) => [...prev, username]);
 
-          break;
-        }
-
-        case "youLost": {
-          setHasLost(true); // например, флаг в состоянии
-          setBattleLog((prev) => [
-            ...prev,
-            { type: "defeat", message: `You have lost the game.` },
-          ]);
-
-          // Можно отключить интерфейс игрока
           break;
         }
 
@@ -259,11 +269,11 @@ const GamePage = () => {
 
           <ul>
             {battleLog.map((log, index) => {
-              return <li key={index}>{log.text}</li>;
+              return <li key={index}>{log.message}</li>;
             })}
           </ul>
         </div>
-        <button onClick={() => navigate("/")}>Log out</button>
+        <button onClick={() => navigate("/game")}>Log out</button>
       </div>
     </div>
   );

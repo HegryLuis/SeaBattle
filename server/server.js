@@ -2,8 +2,10 @@ const WebSocket = require("ws");
 const connectDB = require("./database");
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const fetchGamesRoutes = require("./routes/fetchGames");
 const GameModel = require("./models/Game");
 const cors = require("cors");
+const User = require("./models/User");
 
 const app = express();
 const PORT = 4000;
@@ -19,10 +21,11 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-const games = {}; // { gameID: { players: [], boards: {}, turnIndex: 0 } }
+const games = {};
 connectDB();
 
 app.use("/api/auth", authRoutes);
+app.use("/api", fetchGamesRoutes);
 
 app.listen(BACKEND_PORT, () => {
   console.log(`🚀 Server running on http://localhost:${BACKEND_PORT}`);
@@ -50,6 +53,17 @@ function start() {
 
       if (req.event === "ready") {
         markPlayerReady(req.payload);
+      }
+
+      if (req.event === "log") {
+        const { gameID, log } = req.payload;
+        if (games[gameID]) {
+          if (!Array.isArray(games[gameID].logs)) {
+            games[gameID].logs = [];
+          }
+
+          games[gameID].logs.push(log);
+        }
       }
     });
 
@@ -352,6 +366,9 @@ function start() {
   async function endGame(gameID, winner) {
     const game = games[gameID];
 
+    if (!game) return;
+
+    // Запис гри в бд
     const gameData = new GameModel({
       gameID,
       players: game.players.map((p) => p.username),
@@ -365,7 +382,22 @@ function start() {
       logs: game.logs || [],
     });
 
+    //Оновлення статусу всіх гравців
+    for (const player of game.players) {
+      await User.findOneAndUpdate(
+        { username: player.username },
+        {
+          $inc: {
+            totalGames: 1,
+            wins: player.username === winner ? 1 : 0,
+          },
+        },
+        { new: true }
+      );
+    }
+
     try {
+      await updateUserStats(gameData.gameID);
       await gameData.save();
       console.log(`✅ Game ${gameID} saved to database`);
     } catch (err) {

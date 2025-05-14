@@ -11,6 +11,11 @@ const boardSchema = new mongoose.Schema({
   cells: [[cellSchema]],
 });
 
+const logSchema = new mongoose.Schema({
+  message: String,
+  timestamp: Date,
+});
+
 const gameSchema = new mongoose.Schema({
   gameID: String,
   players: [String],
@@ -18,7 +23,7 @@ const gameSchema = new mongoose.Schema({
   winner: String,
   startedAt: Date,
   endedAt: Date,
-  logs: [String],
+  logs: [logSchema],
 });
 
 module.exports = mongoose.model("Game", gameSchema);

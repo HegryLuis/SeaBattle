@@ -231,6 +231,9 @@ const LoginPage = () => {
               >
                 PLAY NOW!
               </button>
+              <button onClick={() => navigate("/history")}>
+                See Game History
+              </button>
             </div>
           )}
         </form>
