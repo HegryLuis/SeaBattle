@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const Game = require("../models/Game"); // модель Game
+const Game = require("../models/Game");
 
-// Получить все игры
 router.get("/games", async (req, res) => {
   const { nickname } = req.query;
 
@@ -14,7 +13,6 @@ router.get("/games", async (req, res) => {
 
       res.json(games);
     } else {
-      // fallback, если никнейм не передан — можно вообще не возвращать игры
       res.json([]);
     }
   } catch (err) {

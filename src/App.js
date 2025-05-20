@@ -13,7 +13,6 @@ function App() {
   return (
     <Provider>
       <div className="App">
-        <Background />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<AuthPage />} />

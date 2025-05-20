@@ -33,18 +33,18 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
 
   console.log("Request body:", req.body);
 
-  if (!username || !password)
+  if (!username || !password || !email)
     return res.status(400).json({ msg: "All fields are required" });
 
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser)
       return res.status(400).json({ msg: "Nickname already exists" });
-    const newUser = new User({ username, password });
+    const newUser = new User({ username, password, email });
     await newUser.save();
     const token = jwt.sign(
       { id: newUser._id, username: newUser.username },
