@@ -107,13 +107,6 @@ button {
   font-size: 16px;
 }
 
-/* input[type="text"] {
-  background: #224b75;
-  background: #bebebe;
-  color: black;
-  outline: none;
-} */
-
 button {
   color: #fff;
   background: #0a74ca;
@@ -484,18 +477,27 @@ button:hover {
   text-align: center;
   z-index: 1;
   font-size: 18px;
+
+  transition: max-width 0.5s ease;
+}
+
+.modal-login-page {
+  max-width: 600px;
 }
 
 .login-page input {
   border: 1px solid #21262d;
   outline: none;
-  /* max-width: 350px; */
   width: 90%;
   padding: 10px 12px;
   margin: 10px 0;
   border-radius: 5px;
   font-size: 16px;
   background: #161b22;
+  color: #fff;
+}
+
+.login-page input::placeholder {
   color: #6e7681;
 }
 

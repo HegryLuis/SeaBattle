@@ -7,9 +7,11 @@ const GameModel = require("./models/Game");
 const cors = require("cors");
 const User = require("./models/User");
 
+require("dotenv").config();
+
 const app = express();
-const PORT = 4000;
-const BACKEND_PORT = 4001;
+const PORT = process.env.PORT;
+const BACKEND_PORT = process.env.BACKEND_PORT;
 
 const corsOptions = {
   origin: "http://localhost:3000",

@@ -2,6 +2,8 @@ import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { context } from "../context";
 import Cookies from "js-cookie";
+import ForgotPasswordModal from "../Components/forgotPasswordModal/ForgotPasswordModal";
+import { AnimatePresence, motion } from "framer-motion";
 
 const AuthPage = () => {
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
@@ -11,6 +13,7 @@ const AuthPage = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
   const [hideError, setHideError] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const { setIsAuthenticated, setNickname: setGlobalNickname } =
     useContext(context);
   const navigate = useNavigate();
@@ -67,8 +70,8 @@ const AuthPage = () => {
 
   useEffect(() => {
     if (error) {
-      const hideTimeout = setTimeout(() => setHideError(true), 1500); // старт анімації
-      const clearTimeoutId = setTimeout(() => setError(null), 2000); // видалення помилки
+      const hideTimeout = setTimeout(() => setHideError(true), 1500);
+      const clearTimeoutId = setTimeout(() => setError(null), 2000);
 
       return () => {
         clearTimeout(hideTimeout);
@@ -78,83 +81,221 @@ const AuthPage = () => {
   }, [error]);
 
   const showError = (message) => {
-    setHideError(false); // сброс анимации исчезновения
-    setError(message); // установка нового текста ошибки
+    setHideError(false);
+    setError(message);
   };
 
   return (
     <div className="login-page-wrapper">
-      <div className="login-page">
-        <h1 className="bebasNeue">{isRegistering ? "Sign Up" : "Log In"}</h1>
-
-        <label>
-          Nickname
-          <input
-            type="text"
-            placeholder="Nickname"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-        </label>
-
-        {isRegistering && (
-          <label>
-            Email
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-        )}
-
-        <label>
-          <div className="label-wrap">
-            <p>Password</p>
-            {!isRegistering && <p className="forgot-password-link">Forgot?</p>}
-          </div>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-
-        {isRegistering && (
-          <label>
-            Confirm password
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </label>
-        )}
-
-        {error && (
-          <div className={`auth-error ${hideError ? "hide" : ""}`}>{error}</div>
-        )}
-
-        <button className="anton" onClick={handleAuth}>
-          {isRegistering ? "Sign Up" : "Log In"}
-        </button>
-
-        <div className="button-switcher-wrap">
-          {isRegistering ? (
-            <>
-              Already have an account?{" "}
-              <button onClick={() => setIsRegistering(false)}>Log In</button>
-            </>
+      <div className={`login-page ${showModal ? "modal-login-page" : ""}`}>
+        <AnimatePresence mode="wait">
+          {showModal ? (
+            <motion.div
+              key="modal"
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <ForgotPasswordModal
+                nickname
+                onClose={() => setShowModal(false)}
+              />
+            </motion.div>
           ) : (
-            <>
-              Don't have an account?{" "}
-              <button onClick={() => setIsRegistering(true)}>Sign Up</button>
-            </>
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <h1 className="bebasNeue">
+                {isRegistering ? "Sign Up" : "Log In"}
+              </h1>
+
+              <label>
+                Nickname
+                <input
+                  type="text"
+                  placeholder="Nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                />
+              </label>
+
+              {isRegistering && (
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </label>
+              )}
+
+              <label>
+                <div className="label-wrap">
+                  <p>Password</p>
+                  {!isRegistering && (
+                    <p
+                      onClick={() => setShowModal(true)}
+                      className="forgot-password-link"
+                    >
+                      Forgot?
+                    </p>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </label>
+
+              {isRegistering && (
+                <label>
+                  Confirm password
+                  <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </label>
+              )}
+
+              {error && (
+                <div className={`auth-error ${hideError ? "hide" : ""}`}>
+                  {error}
+                </div>
+              )}
+
+              <button className="anton" onClick={handleAuth}>
+                {isRegistering ? "Sign Up" : "Log In"}
+              </button>
+
+              <div className="button-switcher-wrap">
+                {isRegistering ? (
+                  <>
+                    Already have an account?{" "}
+                    <button onClick={() => setIsRegistering(false)}>
+                      Log In
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Don't have an account?{" "}
+                    <button onClick={() => setIsRegistering(true)}>
+                      Sign Up
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="login-page-wrapper">
+      <div className={`login-page ${showModal ? "modal-login-page" : ""}`}>
+        {showModal ? (
+          <ForgotPasswordModal onClose={() => setShowModal(false)} />
+        ) : (
+          <>
+            <h1 className="bebasNeue">
+              {isRegistering ? "Sign Up" : "Log In"}
+            </h1>
+
+            <label>
+              Nickname
+              <input
+                type="text"
+                placeholder="Nickname"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+              />
+            </label>
+
+            {isRegistering && (
+              <label>
+                Email
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+            )}
+
+            <label>
+              <div className="label-wrap">
+                <p>Password</p>
+                {!isRegistering && (
+                  <p
+                    onClick={() => setShowModal(true)}
+                    className="forgot-password-link"
+                  >
+                    Forgot?
+                  </p>
+                )}
+              </div>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+
+            {isRegistering && (
+              <label>
+                Confirm password
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </label>
+            )}
+
+            {error && (
+              <div className={`auth-error ${hideError ? "hide" : ""}`}>
+                {error}
+              </div>
+            )}
+
+            <button className="anton" onClick={handleAuth}>
+              {isRegistering ? "Sign Up" : "Log In"}
+            </button>
+
+            <div className="button-switcher-wrap">
+              {isRegistering ? (
+                <>
+                  Already have an account?{" "}
+                  <button onClick={() => setIsRegistering(false)}>
+                    Log In
+                  </button>
+                </>
+              ) : (
+                <>
+                  Don't have an account?{" "}
+                  <button onClick={() => setIsRegistering(true)}>
+                    Sign Up
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
