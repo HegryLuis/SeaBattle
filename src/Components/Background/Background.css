@@ -14,7 +14,6 @@
   top: 0;
   left: 0;
   z-index: -1;
-  /* background: url("./../../images/sea-battle-background.png"); */
 }
 
 @keyframes moveInCircle {

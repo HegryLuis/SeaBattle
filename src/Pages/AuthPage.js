@@ -4,6 +4,7 @@ import { context } from "../context";
 import Cookies from "js-cookie";
 import ForgotPasswordModal from "../Components/forgotPasswordModal/ForgotPasswordModal";
 import { AnimatePresence, motion } from "framer-motion";
+import VerificationCodeModal from "../Components/verificationCodeModal/VerificationCodeModal";
 
 const AuthPage = () => {
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
@@ -14,6 +15,8 @@ const AuthPage = () => {
   const [error, setError] = useState("");
   const [hideError, setHideError] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+
   const { setIsAuthenticated, setNickname: setGlobalNickname } =
     useContext(context);
   const navigate = useNavigate();
@@ -68,6 +71,16 @@ const AuthPage = () => {
     }
   };
 
+  const handleVerificationRequest = () => {
+    setShowModal(false); // Закрываем модальное окно сброса
+    setShowVerificationModal(true); // Показываем окно с кодом
+  };
+
+  const handleBackModal = () => {
+    setShowModal(false);
+    setShowVerificationModal(false);
+  };
+
   useEffect(() => {
     if (error) {
       const hideTimeout = setTimeout(() => setHideError(true), 1500);
@@ -87,7 +100,11 @@ const AuthPage = () => {
 
   return (
     <div className="login-page-wrapper">
-      <div className={`login-page ${showModal ? "modal-login-page" : ""}`}>
+      <div
+        className={`login-page ${
+          showModal || showVerificationModal ? "modal-login-page" : ""
+        }`}
+      >
         <AnimatePresence mode="wait">
           {showModal ? (
             <motion.div
@@ -98,8 +115,21 @@ const AuthPage = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <ForgotPasswordModal
-                nickname
-                onClose={() => setShowModal(false)}
+                onClose={handleBackModal}
+                onSend={handleVerificationRequest}
+              />
+            </motion.div>
+          ) : showVerificationModal ? (
+            <motion.div
+              key="verification"
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <VerificationCodeModal
+                onClose={handleBackModal}
+                onSubmit={(code) => console.log(`Code: ${code}`)}
               />
             </motion.div>
           ) : (
@@ -198,104 +228,6 @@ const AuthPage = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="login-page-wrapper">
-      <div className={`login-page ${showModal ? "modal-login-page" : ""}`}>
-        {showModal ? (
-          <ForgotPasswordModal onClose={() => setShowModal(false)} />
-        ) : (
-          <>
-            <h1 className="bebasNeue">
-              {isRegistering ? "Sign Up" : "Log In"}
-            </h1>
-
-            <label>
-              Nickname
-              <input
-                type="text"
-                placeholder="Nickname"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-              />
-            </label>
-
-            {isRegistering && (
-              <label>
-                Email
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </label>
-            )}
-
-            <label>
-              <div className="label-wrap">
-                <p>Password</p>
-                {!isRegistering && (
-                  <p
-                    onClick={() => setShowModal(true)}
-                    className="forgot-password-link"
-                  >
-                    Forgot?
-                  </p>
-                )}
-              </div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-
-            {isRegistering && (
-              <label>
-                Confirm password
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </label>
-            )}
-
-            {error && (
-              <div className={`auth-error ${hideError ? "hide" : ""}`}>
-                {error}
-              </div>
-            )}
-
-            <button className="anton" onClick={handleAuth}>
-              {isRegistering ? "Sign Up" : "Log In"}
-            </button>
-
-            <div className="button-switcher-wrap">
-              {isRegistering ? (
-                <>
-                  Already have an account?{" "}
-                  <button onClick={() => setIsRegistering(false)}>
-                    Log In
-                  </button>
-                </>
-              ) : (
-                <>
-                  Don't have an account?{" "}
-                  <button onClick={() => setIsRegistering(true)}>
-                    Sign Up
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

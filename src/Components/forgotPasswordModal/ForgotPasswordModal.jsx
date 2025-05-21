@@ -2,18 +2,21 @@ import React, { useState } from "react";
 import "./ForgotPasswordModal.css";
 import Cookies from "js-cookie";
 
-const ForgotPasswordModal = ({ onClose }) => {
+const ForgotPasswordModal = ({ onClose, onSend }) => {
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
+    if (loading) return;
     setError("");
     if (!email || !nickname) {
       setError("Please fill in both username and email.");
       return;
     }
 
+    setLoading(true);
     try {
       const checkResponse = await fetch(
         "http://localhost:4001/api/auth/check-email",
@@ -47,8 +50,11 @@ const ForgotPasswordModal = ({ onClose }) => {
       }
 
       alert(`Reset code sent to ${email}`);
+      if (onSend) onSend();
     } catch (error) {
       setError("Network error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,7 +80,9 @@ const ForgotPasswordModal = ({ onClose }) => {
 
         {error && <p className={`auth-error`}>{error}</p>}
 
-        <button onClick={handleSend}>SEND</button>
+        <button onClick={handleSend} disabled={loading}>
+          {loading ? "SENDING..." : "SEND"}
+        </button>
         <button className="return-btn" onClick={onClose}>
           RETURN
         </button>

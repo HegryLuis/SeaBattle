@@ -108,16 +108,17 @@ router.post("/send-reset-code", async (req, res) => {
     if (user.email !== email)
       return res.status(400).json({ msg: "Email does not match" });
 
-    // Генерируем 6-значный код
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Сохраняем код в памяти (на 15 минут)
     resetCodes[username] = {
       code,
       expiresAt: Date.now() + 15 * 60 * 1000,
     };
 
-    // Отправляем письмо
+    console.log(
+      `send-reset-code\n\tresetCodes[${username}] = ${resetCodes[username].code}`
+    );
+
     await transporter.sendMail({
       from: `"SeaBattle Support" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -131,6 +132,32 @@ router.post("/send-reset-code", async (req, res) => {
     console.error(error);
     res.status(500).json({ msg: "Server error" });
   }
+});
+
+router.post("/verify-reset-code", async (req, res) => {
+  const { username, code } = req.body;
+
+  if (!username || !code)
+    return res.status(400).json({ msg: "Username and code are required" });
+
+  const stored = resetCodes[username];
+
+  if (!stored) {
+    return res.status(400).json({ msg: "No reset code found for this user" });
+  }
+
+  if (Date.now() > stored.expiresAt) {
+    delete resetCodes[username];
+    return res.status(400).json({ msg: "Code has expired" });
+  }
+
+  if (stored.code !== code) {
+    return res.status(400).json({ msg: "Invalid code" });
+  }
+
+  console.log("Code verified");
+  delete resetCodes[username];
+  return res.status(200).json({ msg: "Code verified" });
 });
 
 module.exports = router;
