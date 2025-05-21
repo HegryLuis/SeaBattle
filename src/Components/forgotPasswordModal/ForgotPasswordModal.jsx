@@ -50,7 +50,7 @@ const ForgotPasswordModal = ({ onClose, onSend }) => {
       }
 
       alert(`Reset code sent to ${email}`);
-      if (onSend) onSend();
+      if (onSend) onSend(email);
     } catch (error) {
       setError("Network error");
     } finally {

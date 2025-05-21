@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import ForgotPasswordModal from "../Components/forgotPasswordModal/ForgotPasswordModal";
 import { AnimatePresence, motion } from "framer-motion";
 import VerificationCodeModal from "../Components/verificationCodeModal/VerificationCodeModal";
+import ChangePasswordModal from "../Components/changePasswordModal/ChangePasswordModal";
 
 const AuthPage = () => {
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
@@ -16,6 +17,7 @@ const AuthPage = () => {
   const [hideError, setHideError] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const { setIsAuthenticated, setNickname: setGlobalNickname } =
     useContext(context);
@@ -72,13 +74,19 @@ const AuthPage = () => {
   };
 
   const handleVerificationRequest = () => {
-    setShowModal(false); // Закрываем модальное окно сброса
-    setShowVerificationModal(true); // Показываем окно с кодом
+    setShowModal(false);
+    setShowVerificationModal(true);
+  };
+
+  const handleVerificationSucceeded = () => {
+    setShowVerificationModal(false);
+    setShowChangePasswordModal(true);
   };
 
   const handleBackModal = () => {
     setShowModal(false);
     setShowVerificationModal(false);
+    setShowChangePasswordModal(false);
   };
 
   useEffect(() => {
@@ -129,8 +137,18 @@ const AuthPage = () => {
             >
               <VerificationCodeModal
                 onClose={handleBackModal}
-                onSubmit={(code) => console.log(`Code: ${code}`)}
+                onSubmit={handleVerificationSucceeded}
               />
+            </motion.div>
+          ) : showChangePasswordModal ? (
+            <motion.div
+              key="change-password"
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <ChangePasswordModal onClose={handleBackModal} />
             </motion.div>
           ) : (
             <motion.div

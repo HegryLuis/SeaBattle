@@ -160,4 +160,27 @@ router.post("/verify-reset-code", async (req, res) => {
   return res.status(200).json({ msg: "Code verified" });
 });
 
+router.post("/change-password", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ msg: "Username and new password are required" });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    user.password = password;
+    await user.save();
+
+    res.status(200).json({ msg: "Password changed successfully" });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
 module.exports = router;
