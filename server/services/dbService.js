@@ -16,12 +16,20 @@ async function saveGame(gameID, game, winner) {
   });
 
   for (const player of game.players) {
+    const isWinner = player.username.toLowerCase() === winner.toLowerCase();
+
+    console.log(
+      ` Updating user ${player.username}: totalGames +1, wins +${
+        isWinner ? 1 : 0
+      }`
+    );
+
     await User.findOneAndUpdate(
       { username: player.username },
       {
         $inc: {
           totalGames: 1,
-          wins: player.username === winner ? 1 : 0,
+          wins: isWinner ? 1 : 0,
         },
       },
       { new: true }

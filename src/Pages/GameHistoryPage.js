@@ -51,9 +51,20 @@ const GameHistoryPage = () => {
     }));
   };
 
+  const totalGames = games.length;
+  const totalWins = games.filter((game) => game.winner === nickname).length;
+
   return (
     <div className="history-page">
       <h1>Game History</h1>
+
+      {games.length > 0 && (
+        <p className="game-stats">
+          Wins: <strong>{totalWins}</strong> / Total Games:{" "}
+          <strong>{totalGames}</strong>
+        </p>
+      )}
+
       {games.length === 0 ? (
         <p className="no-games">No games found.</p>
       ) : (

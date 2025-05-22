@@ -1,5 +1,5 @@
 const WebSocket = require("ws");
-const gameService = require("./../services/game.service");
+const gameService = require("./../services/game/gameService");
 
 const games = {};
 

@@ -8,7 +8,7 @@ router.get("/games", async (req, res) => {
   try {
     if (nickname) {
       const games = await Game.find({
-        players: nickname,
+        players: { $regex: new RegExp(`^${nickname}$`, "i") },
       }).sort({ startedAt: -1 });
 
       res.json(games);
