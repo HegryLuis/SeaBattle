@@ -2,8 +2,10 @@ import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import "../App.css";
 import { context } from "../context";
+import { useNavigate } from "react-router-dom";
 
 const GameHistoryPage = () => {
+  const navigate = useNavigate();
   const { nickname } = useContext(context);
   const [games, setGames] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -61,10 +63,7 @@ const GameHistoryPage = () => {
               <tr>
                 <th>Game ID</th>
                 <th>Players</th>
-                <th
-                  onClick={() => requestSort("win")}
-                  style={{ cursor: "pointer" }}
-                >
+                <th onClick={() => requestSort("win")} className="th-sorting">
                   Winner{" "}
                   {sortConfig.key === "win"
                     ? sortConfig.direction === "asc"
@@ -74,7 +73,7 @@ const GameHistoryPage = () => {
                 </th>
                 <th
                   onClick={() => requestSort("startedAt")}
-                  style={{ cursor: "pointer" }}
+                  className="th-sorting"
                 >
                   Start{" "}
                   {sortConfig.key === "startedAt"
@@ -85,7 +84,7 @@ const GameHistoryPage = () => {
                 </th>
                 <th
                   onClick={() => requestSort("endedAt")}
-                  style={{ cursor: "pointer" }}
+                  className="th-sorting"
                 >
                   End{" "}
                   {sortConfig.key === "endedAt"
@@ -96,7 +95,7 @@ const GameHistoryPage = () => {
                 </th>
                 <th
                   onClick={() => requestSort("duration")}
-                  style={{ cursor: "pointer" }}
+                  className="th-sorting"
                 >
                   Duration{" "}
                   {sortConfig.key === "duration"
@@ -156,6 +155,14 @@ const GameHistoryPage = () => {
           </table>
         </div>
       )}
+
+      <button
+        onClick={() => {
+          navigate("/game");
+        }}
+      >
+        RETURN
+      </button>
     </div>
   );
 };

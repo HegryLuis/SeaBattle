@@ -125,12 +125,13 @@ const LoginPage = () => {
   return (
     <>
       <div className="wrap">
+        <div className="field-group">
+          <h2>Your name {nickname}</h2>
+        </div>
+
+        <button onClick={() => navigate("/history")}>See Game History</button>
         <form onSubmit={startPlay}>
           <div className="wrap-input">
-            <div className="field-group">
-              <h2>Your name {nickname}</h2>
-            </div>
-
             <div className="id-input-wrap">
               <div
                 className="field-group radio-input"
@@ -212,8 +213,6 @@ const LoginPage = () => {
             <h1 className="redacting-title">Board Redacting</h1>
             <RedactComponent setShipsPlaced={setShipsPlaced} />
           </div>
-
-          <button onClick={() => navigate("/history")}>See Game History</button>
 
           {!shipsPlaced ? (
             <div className="redacting-status">

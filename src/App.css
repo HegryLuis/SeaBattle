@@ -353,18 +353,26 @@ button:hover {
 }
 
 .table-container {
+  width: 100%;
   overflow-x: auto;
   margin-top: 20px;
 }
 
 .game-history-table {
   width: 100%;
+  min-width: 800px;
+  table-layout: auto;
   border-collapse: collapse;
   background-color: #123;
   border: 1px solid #3ab0ff;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.game-history-table th.th-sorting {
+  cursor: pointer;
+  color: #0a74ca;
 }
 
 .game-history-table th,

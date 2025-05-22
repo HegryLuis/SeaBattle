@@ -43,7 +43,6 @@ const ChangePasswordModal = ({ onClose }) => {
 
       alert("Password changed successfully!");
       onClose();
-      //   if (onSend) onSend();
     } catch (error) {
       setError("Server error");
     } finally {
