@@ -12,6 +12,7 @@ async function initGames(games, ws, gameID) {
       lostPlayers: new Set(),
       logs: [],
       startedAt: null,
+      currentTurnTime: null,
     };
     console.log(`Game ${gameID} created`);
   }

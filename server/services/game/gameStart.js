@@ -1,3 +1,5 @@
+const { setTurnTimeout } = require("./gameUtils");
+
 function startGame(games, gameID) {
   const game = games[gameID];
   game.startedAt = new Date();
@@ -36,6 +38,8 @@ function startGame(games, gameID) {
   });
 
   game.globalTurn = 0;
+
+  setTurnTimeout(game, gameID, games);
 }
 
 module.exports = { startGame };

@@ -11,6 +11,7 @@ const LoginPage = () => {
   const [waitingStatus, setWaitingStatus] = useState(null);
   const [shipsPlaced, setShipsPlaced] = useState(false);
   const [playersNumber, setPlayersNumber] = useState(2);
+  const [shotTimer, setShotTimer] = useState(20);
   const {
     nickname,
     gameID,
@@ -59,7 +60,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/"); // Перенаправлення на сторінку логіну, якщо не авторизований
+      navigate("/");
     }
   }, [isAuthenticated, navigate]);
 
@@ -117,6 +118,7 @@ const LoginPage = () => {
           gameID,
           board: myBoard.serialize(),
           playersNum: Number(playersNumber),
+          shotTimer: Number(shotTimer),
         },
       })
     );
@@ -200,6 +202,27 @@ const LoginPage = () => {
                         value={playersNumber}
                         onChange={(e) => {
                           setPlayersNumber(e.target.value);
+                        }}
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label htmlFor="timer">
+                        <strong>Time per shot (seconds):</strong>
+                      </label>
+                      <input
+                        type="number"
+                        id="timer"
+                        name="timer"
+                        min="10"
+                        max="60"
+                        value={shotTimer}
+                        onChange={(e) => {
+                          const value = Math.max(
+                            10,
+                            Math.min(60, Number(e.target.value))
+                          );
+                          setShotTimer(value);
                         }}
                       />
                     </div>

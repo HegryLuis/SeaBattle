@@ -4,6 +4,10 @@ const User = require("./../../models/User");
 async function endGame(games, gameID, winner) {
   const game = games[gameID];
 
+  if (game.currentTurnTimer) {
+    clearTimeout(game.currentTurnTimer);
+  }
+
   if (!game) return;
 
   const gameData = new GameModel({

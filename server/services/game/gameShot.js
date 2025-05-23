@@ -1,5 +1,6 @@
 const { checkVictory, checkDefeat } = require("./gameCheck");
 const { endGame } = require("./gameEnd");
+const { setTurnTimeout } = require("./gameUtils");
 
 function processShot(games, { username, x, y, gameID }) {
   const game = games[gameID];
@@ -13,34 +14,69 @@ function processShot(games, { username, x, y, gameID }) {
   if (game.players[game.globalTurn].username !== username) return;
 
   const playerTargetData = game.playerTargets[username];
-  let target = playerTargetData.opponents[playerTargetData.currentTargetIndex];
 
-  // Skip lost opponents
-  while (game.lostPlayers.has(target)) {
-    playerTargetData.currentTargetIndex++;
+  if (
+    playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
+  ) {
+    playerTargetData.currentTargetIndex = 0;
+  }
 
+  let validTargetFound = false;
+  let attempts = 0;
+  let target = null;
+
+  while (attempts < playerTargetData.opponents.length) {
     if (
       playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
     ) {
       playerTargetData.currentTargetIndex = 0;
-
-      do {
-        game.globalTurn = (game.globalTurn + 1) % game.players.length;
-      } while (game.lostPlayers.has(game.players[game.globalTurn].username));
-
-      game.players.forEach((player) => {
-        player.ws.send(
-          JSON.stringify({
-            type: "changeTurn",
-            payload: { globalTurn: game.globalTurn },
-          })
-        );
-      });
-
-      return;
     }
 
-    target = playerTargetData.opponents[playerTargetData.currentTargetIndex];
+    const potentialTarget =
+      playerTargetData.opponents[playerTargetData.currentTargetIndex];
+
+    if (!game.lostPlayers.has(potentialTarget)) {
+      target = potentialTarget;
+      validTargetFound = true;
+      break;
+    }
+
+    playerTargetData.currentTargetIndex++;
+    attempts++;
+  }
+
+  // let validTargetFound = false;
+  // while (
+  //   playerTargetData.currentTargetIndex < playerTargetData.opponents.length
+  // ) {
+  //   const potentialTarget =
+  //     playerTargetData.opponents[playerTargetData.currentTargetIndex];
+  //   if (!game.lostPlayers.has(potentialTarget)) {
+  //     target = potentialTarget;
+  //     validTargetFound = true;
+  //     break;
+  //   }
+  //   playerTargetData.currentTargetIndex++;
+  // }
+
+  if (!validTargetFound) {
+    // Все цели проиграли — передаём ход дальше
+    playerTargetData.currentTargetIndex = 0;
+    do {
+      game.globalTurn = (game.globalTurn + 1) % game.players.length;
+    } while (game.lostPlayers.has(game.players[game.globalTurn].username));
+
+    game.players.forEach((player) => {
+      player.ws.send(
+        JSON.stringify({
+          type: "changeTurn",
+          payload: { globalTurn: game.globalTurn },
+        })
+      );
+    });
+
+    setTurnTimeout(game, gameID, games);
+    return;
   }
 
   const enemyBoard = game.boards[target];
@@ -158,6 +194,10 @@ function processShot(games, { username, x, y, gameID }) {
         })
       );
     });
+
+    setTurnTimeout(game, gameID, games);
+  } else {
+    setTurnTimeout(game, gameID, games);
   }
 }
 

@@ -5,9 +5,12 @@ import GameState from "../Components/GameState";
 import { context } from "../context";
 import { Damage } from "../marks/Damage";
 import { Miss } from "../marks/Miss";
+const TURN_TIME_LIMIT = 10; // сек
 
 const GamePage = () => {
   const { gameID } = useParams();
+  const [turnTimer, setTurnTimer] = useState(10);
+
   const {
     myBoard,
     setMyBoard,
@@ -28,6 +31,7 @@ const GamePage = () => {
   const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
   const [hasLost, setHasLost] = useState(false);
   const [defeatedPlayers, setDefeatedPlayers] = useState([]);
+  const [hasTurnTimedOut, setHasTurnTimedOut] = useState(false);
 
   useEffect(() => {
     if (isMyTurn) {
@@ -35,8 +39,40 @@ const GamePage = () => {
     }
   }, [isMyTurn]);
 
+  useEffect(() => {
+    let timerId;
+
+    if (isMyTurn && !hasLost && !victory) {
+      setTurnTimer(TURN_TIME_LIMIT);
+
+      timerId = setInterval(() => {
+        setTurnTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerId);
+            handleTurnTimeout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(timerId);
+  }, [isMyTurn]);
+
+  function handleTurnTimeout() {
+    setHasTurnTimedOut(true);
+
+    if (currentTargetIndex < enemies.length - 1) {
+      setCurrentTargetIndex(enemies.length);
+    }
+
+    setIsMyTurn(false);
+    addLogEntry("Time is up! Turn skipped.");
+  }
+
   function shoot(x, y) {
-    if (!isMyTurn || victory) return;
+    if (!isMyTurn || victory || hasTurnTimedOut) return;
 
     console.log("Shoot");
     const currEnemy = enemies[currentTargetIndex];
@@ -60,7 +96,7 @@ const GamePage = () => {
 
     const resultText = type === "hit" ? "Hit" : "Miss";
 
-    addLogEntry(`${shooter} => ${target} at (${x}, ${y}) -- ${resultText}`);
+    addLogEntry(`${shooter}, ${target} at (${x}, ${y}) - ${resultText}`);
 
     if (shooter === nickname) {
       // Мы стреляли
@@ -121,8 +157,6 @@ const GamePage = () => {
   const addLogEntry = (message) => {
     const newLog = { message, timestamp: new Date().toISOString() };
 
-    // setBattleLog((prev) => [...prev, newLog]);
-
     setBattleLog((prev) => {
       if (prev.some((log) => log.message === message)) return prev;
       return [...prev, { message, timestamp: new Date().toISOString() }];
@@ -144,6 +178,7 @@ const GamePage = () => {
 
   function handleChangeTurn(payload) {
     setGlobalTurn(payload.globalTurn);
+    setHasTurnTimedOut(false);
 
     if (!enemies || !enemies.length) {
       console.warn("Список противников ещё не инициализирован");
@@ -171,6 +206,21 @@ const GamePage = () => {
 
         case "changeTurn":
           handleChangeTurn(payload);
+          break;
+
+        case "turnTimeout":
+          addLogEntry(`${payload.username}'s time ran out.`);
+          if (payload.username === nickname) {
+            setIsMyTurn(false);
+            console.log(
+              `Payload username: ${payload.username}, turnIndex = ${isMyTurn}`
+            );
+          } else {
+            console.log(
+              `Payload username: ${payload.username}, turnIndex = ${isMyTurn}`
+            );
+          }
+
           break;
 
         case "playerLost": {
@@ -257,6 +307,9 @@ const GamePage = () => {
 
       <div className="stats">
         <GameState isMyTurn={isMyTurn} victory={victory} />
+        {isMyTurn && !hasLost && !victory && (
+          <p className="turn-timer">Time left: {turnTimer}s</p>
+        )}
         {hasLost && (
           <div className="overlay">
             <h2>You lost!</h2>
