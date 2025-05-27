@@ -23,6 +23,9 @@ const CellComponent = ({ cell, isHighlighted, addMark }) => {
   return (
     <div className={cellClasses.join(" ")} onClick={handleClick}>
       {cell?.mark?.name === "miss" ? <span>•</span> : ""}
+      {cell?.mark?.name === "damage" && cell?.mark?.logo && (
+        <img src={cell.mark.logo} alt="damage" className="cell-logo" />
+      )}
     </div>
   );
 };

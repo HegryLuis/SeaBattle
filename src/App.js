@@ -4,10 +4,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
 import GamePage from "./Pages/GamePage";
 import { Provider } from "./context";
-import Background from "./Components/Background/Background";
 import AuthPage from "./Pages/AuthPage";
 import ProtectedRoute from "./hoc/ProtectedRoute";
-import GameHistoryPage from "./Pages/GameHistoryPage";
+// import GameHistoryPage from "./Components/GameHistory";
 
 function App() {
   return (
@@ -32,7 +31,7 @@ function App() {
                 </ProtectedRoute>
               }
             ></Route>
-            <Route path="/history" element={<GameHistoryPage />} />
+            {/* <Route path="/history" element={<GameHistoryPage />} /> */}
           </Routes>
         </BrowserRouter>
       </div>

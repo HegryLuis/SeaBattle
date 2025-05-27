@@ -108,8 +108,10 @@ const GamePage = () => {
             const cell = newBoard.cells[y][x];
 
             if (type === "hit") {
+              console.log(`Cell hit = ${cell.mark}`);
               cell.mark = new Damage(cell);
             } else {
+              console.log(`Cell miss = ${cell.mark}`);
               cell.mark = new Miss(cell);
             }
 

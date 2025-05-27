@@ -8,7 +8,7 @@ export const Provider = ({ children }) => {
   const [myBoard, setMyBoard] = useState(new Board());
   const [gameID, setGameID] = useState("");
   const [nickname, setNickname] = useState(Cookies.get("nickname") || "");
-  const [enemies, setEnemies] = useState([]); // [{name: Player 2, board : {new Board}, turnIndex: 0}, {...}]
+  const [enemies, setEnemies] = useState([]);
   const [wss, setWss] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState();
   const [turnIndex, setTurnIndex] = useState();
@@ -49,16 +49,16 @@ export const Provider = ({ children }) => {
   }, [nickname]);
 
   const ships = [
-    // { x: 0, y: 0, size: 4, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 3, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    { x: 5, y: 5, size: 2, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
-    // { x: 5, y: 5, size: 1, orientation: "horizontal" },
+    // { x: 0, y: 0, size: 4, orientation: "horizontal", color: "blue" },
+    // { x: 5, y: 5, size: 3, orientation: "horizontal", color: "red"},
+    // { x: 5, y: 5, size: 3, orientation: "horizontal", color: "red" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
+    { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
+    { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
+    // { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
   ];
 
   return (
