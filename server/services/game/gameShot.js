@@ -45,20 +45,6 @@ function processShot(games, { username, x, y, gameID }) {
     attempts++;
   }
 
-  // let validTargetFound = false;
-  // while (
-  //   playerTargetData.currentTargetIndex < playerTargetData.opponents.length
-  // ) {
-  //   const potentialTarget =
-  //     playerTargetData.opponents[playerTargetData.currentTargetIndex];
-  //   if (!game.lostPlayers.has(potentialTarget)) {
-  //     target = potentialTarget;
-  //     validTargetFound = true;
-  //     break;
-  //   }
-  //   playerTargetData.currentTargetIndex++;
-  // }
-
   if (!validTargetFound) {
     // Все цели проиграли — передаём ход дальше
     playerTargetData.currentTargetIndex = 0;

@@ -5,12 +5,10 @@ import GameState from "../Components/GameState";
 import { context } from "../context";
 import { Damage } from "../marks/Damage";
 import { Miss } from "../marks/Miss";
-const TURN_TIME_LIMIT = 10; // сек
+import CircleTimer from "../Components/CircleTimer";
+import { v4 as uuidv4 } from "uuid";
 
 const GamePage = () => {
-  const { gameID } = useParams();
-  const [turnTimer, setTurnTimer] = useState(10);
-
   const {
     myBoard,
     setMyBoard,
@@ -20,18 +18,21 @@ const GamePage = () => {
     wss,
     isMyTurn,
     setIsMyTurn,
+    globalTurn,
     setGlobalTurn,
     turnIndex,
+    shotTimer,
   } = useContext(context);
 
   const navigate = useNavigate();
-
+  const { gameID } = useParams();
   const [victory, setVictory] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
   const [currentTargetIndex, setCurrentTargetIndex] = useState(0);
   const [hasLost, setHasLost] = useState(false);
   const [defeatedPlayers, setDefeatedPlayers] = useState([]);
   const [hasTurnTimedOut, setHasTurnTimedOut] = useState(false);
+  const [displayTimer, setDisplayTimer] = useState(shotTimer);
 
   useEffect(() => {
     if (isMyTurn) {
@@ -41,24 +42,24 @@ const GamePage = () => {
 
   useEffect(() => {
     let timerId;
+    let localTime = shotTimer;
+    setDisplayTimer(localTime);
 
-    if (isMyTurn && !hasLost && !victory) {
-      setTurnTimer(TURN_TIME_LIMIT);
+    timerId = setInterval(() => {
+      localTime -= 1;
+      setDisplayTimer(localTime);
 
-      timerId = setInterval(() => {
-        setTurnTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerId);
-            handleTurnTimeout();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+      if (localTime <= 0) {
+        clearInterval(timerId);
+
+        if (isMyTurn && !hasLost && !victory) {
+          handleTurnTimeout();
+        }
+      }
+    }, 1000);
 
     return () => clearInterval(timerId);
-  }, [isMyTurn]);
+  }, [globalTurn, hasLost, victory]);
 
   function handleTurnTimeout() {
     setHasTurnTimedOut(true);
@@ -72,9 +73,8 @@ const GamePage = () => {
   }
 
   function shoot(x, y) {
-    if (!isMyTurn || victory || hasTurnTimedOut) return;
+    if (!isMyTurn || victory) return;
 
-    console.log("Shoot");
     const currEnemy = enemies[currentTargetIndex];
     if (!currEnemy || defeatedPlayers.includes(currEnemy.name)) return;
 
@@ -96,7 +96,7 @@ const GamePage = () => {
 
     const resultText = type === "hit" ? "Hit" : "Miss";
 
-    addLogEntry(`${shooter}, ${target} at (${x}, ${y}) - ${resultText}`);
+    addLogEntry(`${shooter} shot ${target} at (${x}, ${y}): ${resultText}`);
 
     if (shooter === nickname) {
       // Мы стреляли
@@ -108,10 +108,8 @@ const GamePage = () => {
             const cell = newBoard.cells[y][x];
 
             if (type === "hit") {
-              console.log(`Cell hit = ${cell.mark}`);
               cell.mark = new Damage(cell);
             } else {
-              console.log(`Cell miss = ${cell.mark}`);
               cell.mark = new Miss(cell);
             }
 
@@ -157,12 +155,13 @@ const GamePage = () => {
   }
 
   const addLogEntry = (message) => {
-    const newLog = { message, timestamp: new Date().toISOString() };
+    const newLog = {
+      id: uuidv4(),
+      message,
+      timestamp: new Date().toISOString(),
+    };
 
-    setBattleLog((prev) => {
-      if (prev.some((log) => log.message === message)) return prev;
-      return [...prev, { message, timestamp: new Date().toISOString() }];
-    });
+    setBattleLog((prev) => [...prev, newLog]);
 
     if (wss && wss.readyState === WebSocket.OPEN) {
       wss.send(
@@ -182,8 +181,8 @@ const GamePage = () => {
     setGlobalTurn(payload.globalTurn);
     setHasTurnTimedOut(false);
 
-    if (!enemies || !enemies.length) {
-      console.warn("Список противников ещё не инициализирован");
+    if (!enemies.length) {
+      console.warn("Enemies list does yet not initialized");
       return;
     }
 
@@ -202,7 +201,6 @@ const GamePage = () => {
       switch (type) {
         case "hit":
         case "miss":
-          console.log("Type =", type);
           handleShoot(type, payload);
           break;
 
@@ -214,13 +212,6 @@ const GamePage = () => {
           addLogEntry(`${payload.username}'s time ran out.`);
           if (payload.username === nickname) {
             setIsMyTurn(false);
-            console.log(
-              `Payload username: ${payload.username}, turnIndex = ${isMyTurn}`
-            );
-          } else {
-            console.log(
-              `Payload username: ${payload.username}, turnIndex = ${isMyTurn}`
-            );
           }
 
           break;
@@ -255,10 +246,6 @@ const GamePage = () => {
     };
   }, [wss, nickname]);
 
-  useEffect(() => {
-    console.log(victory);
-  }, [victory]);
-
   return (
     <div className="wrap wrap-game">
       <h1 className="game-title">Battle has begun!</h1>
@@ -273,7 +260,7 @@ const GamePage = () => {
             canShoot={false}
           />
         </div>
-
+        <CircleTimer timeLeft={displayTimer} duration={shotTimer} />
         {enemies.map((enemy) => {
           const currEnemy = enemies[currentTargetIndex] || null;
           const isDefeated = defeatedPlayers.includes(enemy.name);
@@ -310,7 +297,7 @@ const GamePage = () => {
       <div className="stats">
         <GameState isMyTurn={isMyTurn} victory={victory} />
         {isMyTurn && !hasLost && !victory && (
-          <p className="turn-timer">Time left: {turnTimer}s</p>
+          <p className="turn-timer">Time left: {displayTimer}s</p>
         )}
         {hasLost && (
           <div className="overlay">
@@ -323,12 +310,12 @@ const GamePage = () => {
           <h3>Battle Log</h3>
 
           <ul>
-            {battleLog.map((log, index) => {
-              return <li key={index}>{log.message}</li>;
+            {battleLog.map((log) => {
+              return <li key={log.id}>{log.message}</li>;
             })}
           </ul>
         </div>
-        <button onClick={() => navigate("/game")}>Log out</button>
+        <button onClick={() => navigate("/game")}>Exit to lobby</button>
       </div>
     </div>
   );

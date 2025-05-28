@@ -13,6 +13,7 @@ async function initGames(games, ws, gameID) {
       logs: [],
       startedAt: null,
       currentTurnTime: null,
+      shotTimer: ws.shotTimer || 10,
     };
     console.log(`Game ${gameID} created`);
   }

@@ -4,8 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import RedactComponent from "../Components/RedactComponent";
 
 const GameForm = ({
-  invitationGame,
-  setInvitationGame,
   gameID,
   setGameID,
   playersNumber,

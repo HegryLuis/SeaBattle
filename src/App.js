@@ -6,7 +6,6 @@ import GamePage from "./Pages/GamePage";
 import { Provider } from "./context";
 import AuthPage from "./Pages/AuthPage";
 import ProtectedRoute from "./hoc/ProtectedRoute";
-// import GameHistoryPage from "./Components/GameHistory";
 
 function App() {
   return (
@@ -31,7 +30,6 @@ function App() {
                 </ProtectedRoute>
               }
             ></Route>
-            {/* <Route path="/history" element={<GameHistoryPage />} /> */}
           </Routes>
         </BrowserRouter>
       </div>

@@ -18,6 +18,7 @@ function start(PORT) {
             wsClient.username = req.payload.username;
             wsClient.playersNum = req.payload.playersNum;
             wsClient.board = req.payload.board;
+            wsClient.shotTimer = req.payload.shotTimer;
             gameService.initGames(games, wsClient, req.payload.gameID);
             break;
 

@@ -19,8 +19,11 @@ function markPlayerReady(games, payload) {
   }
 }
 
-function setTurnTimeout(game, gameID, games, duration = 10000) {
+function setTurnTimeout(game, gameID, games) {
   clearTimeout(game.currentTurnTimer);
+
+  const duration = game.shotTimer * 1000;
+  console.log(`\n\nsetTurnTimeout(game.duration) = ${duration}\n\n`);
 
   game.currentTurnTimer = setTimeout(() => {
     const currentPlayer = game.players[game.globalTurn];

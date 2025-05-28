@@ -8,6 +8,16 @@ body {
   background-color: #0d1117;
 }
 
+.timer-wrapper {
+  width: 100px;
+  height: 100px;
+  position: relative;
+}
+svg {
+  display: block;
+  margin: auto;
+}
+
 .bebasNeue {
   font-family: "Bebas Neue", sans-serif;
   letter-spacing: 0.1rem;

@@ -32,6 +32,7 @@ function startGame(games, gameID) {
           opponents,
           turnIndex: playersTurnIndexes[player.username],
           globalTurn: game.globalTurn,
+          shotTimer: game.shotTimer,
         },
       })
     );

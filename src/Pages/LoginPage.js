@@ -16,7 +16,6 @@ const LoginPage = () => {
   const [waitingStatus, setWaitingStatus] = useState(null);
   const [shipsPlaced, setShipsPlaced] = useState(false);
   const [playersNumber, setPlayersNumber] = useState(2);
-  const [shotTimer, setShotTimer] = useState(20);
   const [mode, setMode] = useState(null); // null, create, enter
 
   const {
@@ -31,6 +30,8 @@ const LoginPage = () => {
     setTurnIndex,
     setIsMyTurn,
     setGlobalTurn,
+    shotTimer,
+    setShotTimer,
   } = useContext(context);
 
   const navigate = useNavigate();
@@ -79,7 +80,13 @@ const LoginPage = () => {
   //
 
   function handleStartGame(payload) {
-    const { username, opponents = [], turnIndex, globalTurn } = payload;
+    const {
+      username,
+      opponents = [],
+      turnIndex,
+      globalTurn,
+      shotTimer,
+    } = payload;
 
     if (!Array.isArray(opponents)) {
       console.error("Wrong opponents format:", opponents);
@@ -90,6 +97,7 @@ const LoginPage = () => {
 
     setTurnIndex(turnIndex);
     setGlobalTurn(globalTurn);
+    setShotTimer(shotTimer);
 
     const updatedEnemies = opponents.map((enemy) => {
       return {
@@ -199,132 +207,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-{
-  /* <form onSubmit={startPlay}>
-            <div className="wrap-input">
-              <div className="id-input-wrap">
-                <div
-                  className="field-group radio-input"
-                  onChange={(e) => {
-                    setInvitationGame(e.target.id === "ingame");
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="typeEnter"
-                    id="gen"
-                    value={!invitationGame}
-                    defaultChecked={!invitationGame}
-                  />
-                  <label htmlFor="gen">Create new game</label>
-
-                  <input
-                    type="radio"
-                    name="typeEnter"
-                    id="ingame"
-                    value={invitationGame}
-                    defaultChecked={invitationGame}
-                  />
-                  <label htmlFor="ingame">Enter in by id</label>
-                </div>
-
-                <div className="field-group">
-                  {invitationGame ? (
-                    <>
-                      <div>
-                        <label htmlFor="gameID">Enter game ID</label>
-                      </div>
-                      <input
-                        type="text"
-                        name="gameID"
-                        defaultValue=""
-                        id="gameID"
-                        onChange={(e) => {
-                          setGameID(e.target.value);
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="btn-gen"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setGameID(uuidv4());
-                        }}
-                      >
-                        Generate game ID
-                      </button>
-                      <p>Generated ID : {gameID}</p>
-
-                      <div className="field-group">
-                        <label htmlFor="numOfPlayers">
-                          <strong>Number of players : </strong>
-                        </label>
-                        <input
-                          type="number"
-                          id="players"
-                          name="players"
-                          min="2"
-                          max="4"
-                          value={playersNumber}
-                          onChange={(e) => {
-                            setPlayersNumber(e.target.value);
-                          }}
-                        />
-                      </div>
-
-                      <div className="field-group">
-                        <label htmlFor="timer">
-                          <strong>Time per shot (seconds):</strong>
-                        </label>
-                        <input
-                          type="number"
-                          id="timer"
-                          name="timer"
-                          min="10"
-                          max="60"
-                          value={shotTimer}
-                          onChange={(e) => {
-                            const value = Math.max(
-                              10,
-                              Math.min(60, Number(e.target.value))
-                            );
-                            setShotTimer(value);
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="board-redacting">
-              <h1 className="redacting-title">Board Redacting</h1>
-              <RedactComponent setShipsPlaced={setShipsPlaced} />
-            </div>
-
-            {!shipsPlaced ? (
-              <div className="redacting-status">
-                <p>Your ships aren`t ready</p>
-              </div>
-            ) : (
-              <div className="redacting-status">
-                {waitingStatus && (
-                  <div className="waiting-status">
-                    <p>{waitingStatus}</p>
-                  </div>
-                )}
-                <button
-                  type="submit"
-                  className="btn-ready redacting-status"
-                  disabled={!shipsPlaced}
-                >
-                  PLAY NOW!
-                </button>
-              </div>
-            )}
-          </form> */
-}

@@ -14,6 +14,7 @@ export const Provider = ({ children }) => {
   const [turnIndex, setTurnIndex] = useState();
   const [isAuthenticated, setIsAuthenticated] = useState(!!nickname);
   const [globalTurn, setGlobalTurn] = useState(0);
+  const [shotTimer, setShotTimer] = useState(20);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:4000");
@@ -82,6 +83,8 @@ export const Provider = ({ children }) => {
         setTurnIndex,
         globalTurn,
         setGlobalTurn,
+        shotTimer,
+        setShotTimer,
       }}
     >
       {children}
