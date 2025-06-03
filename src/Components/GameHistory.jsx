@@ -67,19 +67,17 @@ const GameHistory = ({}) => {
     }
   };
 
-  // const totalGames = games.length;
-  // const totalWins = games.filter((game) => game.winner === nickname).length;
-  // {games.length > 0 && (
-  //   <p className="game-stats">
-  //     Wins: <strong>{totalWins}</strong> / Total Games:{" "}
-  //     <strong>{totalGames}</strong>
-  //   </p>
-  // )}
+  const formatDuration = (ms) => {
+    const totalSeconds = Math.round(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  };
 
   return (
     <div className="">
       {games.length === 0 ? (
-        <p className="no-games">No games found.</p>
+        <p className="no-games anton">No games found.</p>
       ) : (
         <>
           <div className="table-container">
@@ -126,11 +124,9 @@ const GameHistory = ({}) => {
                     </td>
                     <td>{new Date(game.startedAt).toLocaleDateString()}</td>
                     <td>
-                      {Math.round(
-                        (new Date(game.endedAt) - new Date(game.startedAt)) /
-                          1000
-                      )}{" "}
-                      s
+                      {formatDuration(
+                        new Date(game.endedAt) - new Date(game.startedAt)
+                      )}
                     </td>
                   </tr>
                 ))}

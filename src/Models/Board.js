@@ -11,6 +11,8 @@ export class Board {
   }
 
   initCells() {
+    this.cells = [];
+
     for (let i = 0; i < 10; i++) {
       const row = [];
       for (let j = 0; j < 10; j++) {
@@ -62,23 +64,25 @@ export class Board {
   setCellsFromServer(serverData) {
     this.initCells();
 
-    serverData.cells.forEach((row) => {
-      row.forEach((cell) => {
-        if (cell.mark) {
-          switch (cell.mark.type) {
-            case "Ship":
-              this.addShip(cell.x, cell.y);
+    serverData.cells.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        const mark = cell.mark;
+        if (mark && mark.name) {
+          switch (mark.name) {
+            case "ship":
+              this.addShip(x, y);
               break;
 
-            case "Miss":
-              this.addMiss(cell.x, cell.y);
+            case "miss":
+              this.addMiss(x, y);
               break;
 
-            case "Damage":
-              this.addDamage(cell.x, cell.y);
+            case "hit":
+              this.addDamage(x, y);
               break;
 
             default:
+              console.warn("Unknown mark name:", mark.name);
               break;
           }
         }

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BoardComponent from "../Components/BoardComponent";
 import GameState from "../Components/GameState";
@@ -7,6 +7,7 @@ import { Damage } from "../marks/Damage";
 import { Miss } from "../marks/Miss";
 import CircleTimer from "../Components/CircleTimer";
 import { v4 as uuidv4 } from "uuid";
+import { Board } from "../Models/Board";
 
 const GamePage = () => {
   const {
@@ -22,6 +23,7 @@ const GamePage = () => {
     setGlobalTurn,
     turnIndex,
     shotTimer,
+    setTurnIndex,
   } = useContext(context);
 
   const navigate = useNavigate();
@@ -33,6 +35,11 @@ const GamePage = () => {
   const [defeatedPlayers, setDefeatedPlayers] = useState([]);
   const [hasTurnTimedOut, setHasTurnTimedOut] = useState(false);
   const [displayTimer, setDisplayTimer] = useState(shotTimer);
+  const [isReadyToHandleTurn, setIsReadyToHandleTurn] = useState(false);
+  const [, forceUpdate] = useState(0);
+  const pendingEvents = useRef([]);
+  const timerId = useRef(null);
+  const [gameInitialized, setGameInitialized] = useState(false);
 
   useEffect(() => {
     if (isMyTurn) {
@@ -41,25 +48,65 @@ const GamePage = () => {
   }, [isMyTurn]);
 
   useEffect(() => {
-    let timerId;
-    let localTime = shotTimer;
-    setDisplayTimer(localTime);
+    if (enemies.length > 0 && turnIndex !== undefined) {
+      setIsReadyToHandleTurn(true);
+    }
+  }, [enemies, turnIndex]);
 
-    timerId = setInterval(() => {
-      localTime -= 1;
-      setDisplayTimer(localTime);
+  useEffect(() => {
+    if (enemies.length > 0 && pendingEvents.current.length > 0) {
+      pendingEvents.current.forEach(({ type, payload }) => {
+        if (type === "changeTurn") handleChangeTurn(payload);
+        else handleShoot(type, payload);
+      });
+      pendingEvents.current = [];
+    }
+  }, [enemies]);
 
-      if (localTime <= 0) {
-        clearInterval(timerId);
+  useEffect(() => {
+    if (myBoard?.cells?.length && enemies.length && turnIndex !== undefined) {
+      setGameInitialized(true);
+      setIsReadyToHandleTurn(true);
+    }
+  }, [myBoard, enemies, turnIndex]);
 
-        if (isMyTurn && !hasLost && !victory) {
-          handleTurnTimeout();
+  useEffect(() => {
+    if (gameInitialized) {
+      console.log("✅ Game is initialized");
+    }
+  }, [gameInitialized]);
+
+  useEffect(() => {
+    if (wss && wss.readyState === WebSocket.OPEN) {
+      wss.send(
+        JSON.stringify({
+          event: "loadGame",
+          payload: {
+            gameID,
+            username: nickname,
+          },
+        })
+      );
+    } else {
+      // Подключение WebSocket может быть не готово сразу, подожди
+      const interval = setInterval(() => {
+        if (wss && wss.readyState === WebSocket.OPEN) {
+          clearInterval(interval);
+          wss.send(
+            JSON.stringify({
+              event: "loadGame",
+              payload: {
+                gameID,
+                username: nickname,
+              },
+            })
+          );
         }
-      }
-    }, 1000);
+      }, 500);
 
-    return () => clearInterval(timerId);
-  }, [globalTurn, hasLost, victory]);
+      return () => clearInterval(interval);
+    }
+  }, [wss, gameID, nickname]);
 
   function handleTurnTimeout() {
     setHasTurnTimedOut(true);
@@ -73,25 +120,31 @@ const GamePage = () => {
   }
 
   function shoot(x, y) {
+    if (!gameInitialized) {
+      console.log("[shoot] Игра еще не готова");
+      return;
+    }
+
     if (!isMyTurn || victory) return;
 
     const currEnemy = enemies[currentTargetIndex];
     if (!currEnemy || defeatedPlayers.includes(currEnemy.name)) return;
 
     if (wss.readyState === WebSocket.OPEN) {
+      console.log("[shoot] After third if-block. Send to back shoot event");
       wss.send(
         JSON.stringify({
           event: "shoot",
           payload: { username: nickname, x, y, gameID },
         })
       );
-      setCurrentTargetIndex((prev) => prev + 1);
     } else {
       console.error("WebSocket не открыт. Состояние:", wss.readyState);
     }
   }
 
   function handleShoot(type, payload) {
+    console.log("[handleShoot]", { type, payload });
     const { shooter, target, x, y } = payload;
 
     const resultText = type === "hit" ? "Hit" : "Miss";
@@ -122,6 +175,8 @@ const GamePage = () => {
           return enemy;
         })
       );
+
+      setCurrentTargetIndex((prev) => prev + 1);
     } else if (target === nickname) {
       // По нам стреляли
       setMyBoard((prevBoard) => {
@@ -181,13 +236,73 @@ const GamePage = () => {
     setGlobalTurn(payload.globalTurn);
     setHasTurnTimedOut(false);
 
-    if (!enemies.length) {
-      console.warn("Enemies list does yet not initialized");
+    if (timerId.current) {
+      clearInterval(timerId.current);
+      timerId.current = null;
+    }
+
+    if (payload.globalTurn === turnIndex) {
+      setIsMyTurn(true);
+
+      // Запускаем таймер только при своём ходе
+      let localTime = shotTimer;
+      setDisplayTimer(localTime);
+    } else {
+      setIsMyTurn(false);
+    }
+  }
+
+  function processOrQueue(type, payload) {
+    if (
+      !enemies ||
+      enemies.length === 0 ||
+      turnIndex === undefined ||
+      globalTurn === undefined
+    ) {
+      console.log("⏸ Поставлено в очередь", type);
+      pendingEvents.current.push({ type, payload });
+      forceUpdate((n) => n + 1);
+      setIsReadyToHandleTurn(true);
       return;
     }
 
-    setIsMyTurn(payload.globalTurn === turnIndex);
+    console.log("✅ Обрабатывается немедленно", type);
+    if (type === "changeTurn") handleChangeTurn(payload);
+    else handleShoot(type, payload);
   }
+
+  useEffect(() => {
+    // Если это мой ход, таймер ещё не запущен, и нет победы/поражения
+    if (isMyTurn && !timerId.current && !victory && !hasLost) {
+      let localTime = shotTimer;
+      setDisplayTimer(localTime);
+
+      timerId.current = setInterval(() => {
+        localTime -= 1;
+        setDisplayTimer(localTime);
+        if (localTime <= 0) {
+          clearInterval(timerId.current);
+          timerId.current = null;
+          handleTurnTimeout();
+        }
+      }, 1000);
+    }
+  }, [isMyTurn, victory, hasLost]);
+
+  useEffect(() => {
+    return () => {
+      if (timerId.current) {
+        clearInterval(timerId.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (turnIndex !== undefined && globalTurn !== undefined) {
+      setIsMyTurn(globalTurn === turnIndex);
+      setIsReadyToHandleTurn(true);
+    }
+  }, [turnIndex, globalTurn]);
 
   useEffect(() => {
     if (!wss) {
@@ -197,15 +312,13 @@ const GamePage = () => {
 
     wss.onmessage = function (response) {
       const { type, payload } = JSON.parse(response.data);
+      console.log("[onmessage]", type, payload);
 
       switch (type) {
         case "hit":
         case "miss":
-          handleShoot(type, payload);
-          break;
-
         case "changeTurn":
-          handleChangeTurn(payload);
+          processOrQueue(type, payload);
           break;
 
         case "turnTimeout":
@@ -221,7 +334,7 @@ const GamePage = () => {
 
           if (username === nickname) {
             setHasLost(true);
-            addLogEntry(`You have been eliminated.`);
+            addLogEntry("You have been eliminated.");
           } else {
             addLogEntry(`${username} has been eliminated.`);
           }
@@ -231,8 +344,82 @@ const GamePage = () => {
           break;
         }
 
+        case "youLost":
+          setHasLost(true);
+          addLogEntry("You lost the game.");
+          break;
+
         case "victory":
           setVictory(payload.winner);
+          break;
+
+        case "loadGame": {
+          console.log("LoadGame payload : ", payload);
+          const { players, logs, boards, globalTurn, turnIndex } = payload;
+
+          const playerIndex = players.findIndex((p) => p.username === nickname);
+          console.log("Player index in players array:", playerIndex);
+
+          if (playerIndex !== -1) {
+            setTurnIndex(playerIndex);
+            setIsMyTurn(globalTurn === playerIndex);
+            setIsReadyToHandleTurn(true);
+          } else {
+            console.warn("Не удалось найти игрока в списке players");
+            setIsMyTurn(false);
+          }
+
+          setGlobalTurn(globalTurn);
+
+          setBattleLog(
+            (logs || []).map((log) => ({
+              ...log,
+              id: log.id || uuidv4(),
+            }))
+          );
+
+          const boardsMap = Object.fromEntries(
+            boards.map((b) => [b.username, b])
+          );
+
+          const myBoardData = boardsMap[nickname];
+          const myBoard = new Board();
+
+          if (myBoardData?.cells) {
+            myBoard.setCellsFromServer(myBoardData);
+            setMyBoard(myBoard);
+          } else {
+            console.warn("Нет данных доски для игрока:", nickname);
+          }
+
+          const enemyBoards = players
+            .filter((p) => p.username !== nickname)
+            .map((p) => {
+              const board = new Board();
+              const data = boardsMap[p.username];
+              if (data?.cells) {
+                board.setCellsFromServer(data);
+              }
+              return {
+                name: p.username,
+                board,
+              };
+            });
+
+          setEnemies(enemyBoards);
+
+          setIsReadyToHandleTurn(true);
+          setGameInitialized(true);
+
+          break;
+        }
+
+        case "error":
+          console.error("Server error: ", payload.message);
+          break;
+
+        case "playerDisconnected":
+          addLogEntry(`${payload.username} disconnected.`);
           break;
 
         default:
@@ -245,6 +432,34 @@ const GamePage = () => {
       wss.onmessage = null;
     };
   }, [wss, nickname]);
+
+  useEffect(() => {
+    if (!isReadyToHandleTurn) {
+      return;
+    }
+
+    setIsReadyToHandleTurn(false);
+
+    if (pendingEvents.current.length < 1) {
+      return;
+    }
+
+    console.log("🔄 flushPendingEvents START", pendingEvents.current);
+
+    if (!isReadyToHandleTurn || pendingEvents.current.length === 0) {
+      console.log("🚫 flushPendingEvents: Not ready or empty queue");
+      return;
+    }
+
+    const queue = [...pendingEvents.current];
+    pendingEvents.current = [];
+
+    queue.forEach(({ type, payload }) => {
+      console.log("✅ flushing event:", type, payload);
+      if (type === "changeTurn") handleChangeTurn(payload);
+      else handleShoot(type, payload);
+    });
+  }, [isReadyToHandleTurn]);
 
   return (
     <div className="wrap wrap-game">
@@ -271,6 +486,9 @@ const GamePage = () => {
               className={`enemy-board ${isDefeated ? "defeated" : ""}`}
             >
               <p className="nickname">{enemy.name}</p>
+
+              <p>Current target index: {currentTargetIndex}</p>
+              <p>Current target name: {currEnemy?.name}</p>
               <BoardComponent
                 board={enemy.board}
                 setBoard={(newBoard) => {

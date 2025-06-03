@@ -117,12 +117,12 @@ const RedactComponent = ({ setShipsPlaced }) => {
         <div>
           <RedactInstruction />
 
-          <p>
+          <p className="anton">
             Placing ship {selectedShipIndex + 1} of {ships.length}.
           </p>
         </div>
       ) : (
-        <p>Your ships are ready</p>
+        <p className="anton">Your ships are ready</p>
       )}
       <BoardComponent
         board={myBoard}

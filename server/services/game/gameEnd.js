@@ -1,6 +1,7 @@
 const GameModel = require("./../../models/Game");
 const User = require("./../../models/User");
 const { saveGame } = require("./../dbService");
+const { deleteGameProgress } = require("./gameInProgress");
 
 async function endGame(games, gameID, winner) {
   const game = games[gameID];
@@ -20,6 +21,7 @@ async function endGame(games, gameID, winner) {
     );
   });
 
+  await deleteGameProgress(gameID);
   delete games[gameID];
 }
 

@@ -269,8 +269,39 @@
 }
 
 form {
+  width: 60%;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.input-generated-id-wrap {
+  width: 40%;
+  display: block;
+  margin: 0 auto;
+}
+
+.id-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.generate-id-wrap {
+  width: 40%;
+}
+
+.field-group-wrap {
+  width: 40%;
+}
+
+.redacting-btn-wrap {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.generated-id {
+  cursor: pointer;
+  user-select: none;
+  text-decoration: underline;
 }

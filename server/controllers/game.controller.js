@@ -34,6 +34,11 @@ function start(PORT) {
             gameService.addLog(games, req.payload);
             break;
 
+          case "loadGame":
+            console.log("Load game");
+            gameService.handleLoadGame(wsClient, req.payload, games);
+            break;
+
           default:
             console.log(`Unknown event: ${req.event}`);
         }
