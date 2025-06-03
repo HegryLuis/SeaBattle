@@ -139,6 +139,12 @@ const LoginPage = () => {
     );
   };
 
+  const closeMode = () => {
+    setMode(null);
+    setGameID(null);
+    setMyBoard(new Board());
+  };
+
   return (
     <>
       <div className="wrap wrap-login">
@@ -182,7 +188,7 @@ const LoginPage = () => {
               waitingStatus={waitingStatus}
               startPlay={startPlay}
               mode={mode}
-              onClose={() => setMode(null)}
+              onClose={closeMode}
             />
           )}
 

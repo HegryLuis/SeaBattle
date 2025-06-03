@@ -51,23 +51,27 @@ const GameForm = ({
               ) : (
                 <>
                   <div className="generate-id-wrap">
-                    <button
-                      className="btn-gen"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setGameID(uuidv4());
-                      }}
-                    >
-                      Generate game ID
-                    </button>
-                    <div>
+                    <div className="generate-id-wrap-block">
+                      <button
+                        className="btn-gen"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setGameID(uuidv4());
+                        }}
+                      >
+                        Generate
+                      </button>
+                    </div>
+                    <div className="generate-id-wrap-block">
                       <h4>Generated ID: </h4>
                       <span
                         className="generated-id"
                         onClick={() => copyToClipboard(gameID)}
                         style={{ cursor: "pointer", userSelect: "none" }}
                       >
-                        {gameID}
+                        {gameID || (
+                          <span className="placeholder">Click "Generate"</span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -77,44 +81,44 @@ const GameForm = ({
                       <label htmlFor="players">
                         <strong>Number of players:</strong>
                       </label>
-                      <input
-                        type="number"
+                      <select
                         id="players"
                         name="players"
-                        min="2"
-                        max="4"
                         value={playersNumber}
-                        onChange={(e) => setPlayersNumber(e.target.value)}
-                      />
+                        onChange={(e) =>
+                          setPlayersNumber(Number(e.target.value))
+                        }
+                        className="players-select"
+                      >
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                      </select>
                     </div>
 
                     <div className="field-group">
                       <label htmlFor="timer">
                         <strong>Time per shot (seconds):</strong>
                       </label>
-                      <input
-                        type="number"
+                      <select
                         id="timer"
                         name="timer"
-                        min="10"
-                        max="60"
                         value={shotTimer}
-                        onChange={(e) =>
-                          setShotTimer(
-                            Math.max(10, Math.min(60, Number(e.target.value)))
-                          )
-                        }
-                      />
+                        onChange={(e) => setShotTimer(Number(e.target.value))}
+                        className="players-select"
+                      >
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="45">45</option>
+                        <option value="60">60</option>
+                      </select>
                     </div>
                   </div>
                 </>
               )}
             </div>
-          </div>
-
-          <div className="board-redacting">
-            <h1 className="redacting-title">Board Redacting</h1>
-            <RedactComponent setShipsPlaced={setShipsPlaced} />
           </div>
 
           <div className="redacting-btn-wrap">
@@ -142,6 +146,10 @@ const GameForm = ({
             <button className="btn" onClick={onClose}>
               Return
             </button>
+          </div>
+
+          <div className="board-redacting">
+            <RedactComponent setShipsPlaced={setShipsPlaced} />
           </div>
         </form>
       </div>

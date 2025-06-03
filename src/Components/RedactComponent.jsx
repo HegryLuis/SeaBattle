@@ -9,6 +9,7 @@ const RedactComponent = ({ setShipsPlaced }) => {
   const [selectedShipIndex, setSelectedShipIndex] = useState(0);
   const [orientation, setOrientation] = useState("horizontal");
   const [shipPosition, setShipPosition] = useState({ x: 0, y: 0 });
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -113,17 +114,20 @@ const RedactComponent = ({ setShipsPlaced }) => {
 
   return (
     <div className="redact__wrap" tabIndex={0}>
-      {selectedShipIndex < ships.length ? (
-        <div>
-          <RedactInstruction />
-
-          <p className="anton">
-            Placing ship {selectedShipIndex + 1} of {ships.length}.
-          </p>
+      <div className="redacting-title">
+        <h2>Ship Placement</h2>
+        <div className="help-button" onClick={() => setShowHelp(true)}>
+          ?
         </div>
+      </div>
+      {selectedShipIndex < ships.length ? (
+        <p className="anton">
+          Placing ship {selectedShipIndex + 1} of {ships.length}.
+        </p>
       ) : (
         <p className="anton">Your ships are ready</p>
       )}
+
       <BoardComponent
         board={myBoard}
         setBoard={setMyBoard}
@@ -132,6 +136,15 @@ const RedactComponent = ({ setShipsPlaced }) => {
         isMyBoard={true}
         highlightCells={highlightShip()}
       />
+
+      {showHelp && (
+        <div className="help-modal">
+          <button className="close-button" onClick={() => setShowHelp(false)}>
+            ×
+          </button>
+          <RedactInstruction />
+        </div>
+      )}
     </div>
   );
 };
