@@ -336,7 +336,7 @@ button.btn:hover,
 }
 
 .generated-id {
-  width: 300px;
+  /* width: 300px; */
   font-family: monospace;
   background-color: #21262d;
   padding: 10px;

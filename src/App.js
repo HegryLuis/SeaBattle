@@ -1,5 +1,6 @@
 import React from "react";
 import "./App.css";
+import "./Media.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
 import GamePage from "./Pages/GamePage";

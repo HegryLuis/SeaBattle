@@ -463,11 +463,9 @@ const GamePage = () => {
 
   return (
     <div className="wrap wrap-game">
-      <h1 className="game-title">Battle has begun!</h1>
-
       <div className="boards-wrap">
         <div>
-          <p className="nickname">{nickname}</p>
+          <p className="nickname">{`${nickname} (You)`}</p>
           <BoardComponent
             board={myBoard}
             setBoard={setMyBoard}
@@ -487,8 +485,6 @@ const GamePage = () => {
             >
               <p className="nickname">{enemy.name}</p>
 
-              <p>Current target index: {currentTargetIndex}</p>
-              <p>Current target name: {currEnemy?.name}</p>
               <BoardComponent
                 board={enemy.board}
                 setBoard={(newBoard) => {
@@ -513,27 +509,36 @@ const GamePage = () => {
       </div>
 
       <div className="stats">
-        <GameState isMyTurn={isMyTurn} victory={victory} />
-        {isMyTurn && !hasLost && !victory && (
-          <p className="turn-timer">Time left: {displayTimer}s</p>
-        )}
-        {hasLost && (
-          <div className="overlay">
-            <h2>You lost!</h2>
-            <p>Better luck next time!</p>
-          </div>
-        )}
+        <div className="stats-wrap">
+          <GameState isMyTurn={isMyTurn} victory={victory} />
+          {isMyTurn && !hasLost && !victory && (
+            <p className="turn-timer">Time left: {displayTimer}s</p>
+          )}
+          {hasLost && (
+            <div className="overlay">
+              <h2>You lost!</h2>
+              <p>Better luck next time!</p>
+            </div>
+          )}
+
+          <button className="btn-black" onClick={() => navigate("/game")}>
+            Leave the game
+          </button>
+        </div>
 
         <div className="battle-log">
-          <h3>Battle Log</h3>
+          <h3 className="anton">Battle Log</h3>
 
           <ul>
             {battleLog.map((log) => {
-              return <li key={log.id}>{log.message}</li>;
+              return (
+                <li className="anton" key={log.id}>
+                  {log.message}
+                </li>
+              );
             })}
           </ul>
         </div>
-        <button onClick={() => navigate("/game")}>Exit to lobby</button>
       </div>
     </div>
   );

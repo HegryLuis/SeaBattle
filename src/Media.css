@@ -1,0 +1,121 @@
+@media (max-width: 768px) {
+  .redact__wrap {
+    flex-direction: column;
+  }
+
+  .redact__wrap p {
+    font-size: 10px;
+  }
+
+  .wrap-input {
+    max-width: 90%;
+    margin: 0;
+  }
+
+  .wrap-game {
+    flex-direction: column-reverse;
+  }
+
+  .stats {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stats button {
+    width: 30%;
+    margin: 0 auto;
+  }
+
+  .game-title {
+    display: none;
+  }
+
+  .boards-wrap {
+    flex-direction: column-reverse;
+  }
+
+  .game-history-table th,
+  .game-history-table td {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .view-logs-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .code-inputs input {
+    width: 20px !important;
+    height: 30px !important;
+    font-size: 20px !important;
+  }
+
+  .App .wrap-login {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .wrap-login .login-wrapper {
+    width: 80%;
+    margin: 0 auto;
+    order: 1;
+  }
+
+  .wrap-login .left-sidebar {
+    width: 80%;
+    margin: 0 auto;
+    order: 3;
+  }
+
+  .wrap-login .right-sidebar {
+    width: 80%;
+    margin: 0 auto;
+    order: 2;
+  }
+}
+
+@media (max-width: 425px) {
+  .login-page {
+    width: 90%;
+    padding: 20px 10px;
+  }
+
+  .code-inputs {
+    gap: 5px;
+  }
+
+  .code-inputs input {
+    width: 15px !important;
+    height: 25px !important;
+    font-size: 16px !important;
+  }
+
+  .modal-content input {
+    width: auto !important;
+  }
+
+  .wrap-login .login-wrapper {
+    width: 100%;
+  }
+
+  .wrap-login .left-sidebar {
+    width: 100%;
+  }
+
+  .wrap-login .right-sidebar {
+    width: 100%;
+  }
+
+  .board-redacting {
+    padding: 0;
+  }
+}
+
+@media (max-width: 375px) {
+  .code-inputs input {
+    width: 15px !important;
+    height: 25px !important;
+    font-size: 16px !important;
+  }
+}
