@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
+import { context } from "../context";
 
 const GameState = ({ isMyTurn, victory }) => {
+  const { nickname } = useContext(context);
   if (victory) {
-    return <p className="stats-p">🏆 {victory} wins! 🎉</p>;
+    return (
+      <p className="stats-p">
+        {nickname === victory ? "🏆 You win! 🎉" : `${victory} won`}
+      </p>
+    );
   }
 
   return (

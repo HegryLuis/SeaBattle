@@ -110,8 +110,6 @@ async function handleLoadGame(ws, payload, games) {
             lost: game.lostPlayers.has(p.username),
           })),
           boards: Object.entries(game.boards).map(([username, board]) => {
-            // username,
-            // cells: board.cells,
             const cells = JSON.parse(JSON.stringify(board.cells));
 
             if (username !== payload.username) {

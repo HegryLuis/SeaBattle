@@ -151,9 +151,6 @@ const LoginPage = () => {
         <div className="login-sidebar left-sidebar">
           <div className="sidebar-title-wrap">
             <h2 className="anton">Your history</h2>
-            <span className="anton">
-              Click on the match to see the history of moves
-            </span>
           </div>
 
           <GameHistory />

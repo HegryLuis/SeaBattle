@@ -3,15 +3,6 @@ import React, { useEffect, useContext, useState } from "react";
 import { context } from "../context";
 import crown from "./../images/crown.svg";
 
-// const totalGames = games.length;
-// const totalWins = games.filter((game) => game.winner === nickname).length;
-// {games.length > 0 && (
-//   <p className="game-stats">
-//     Wins: <strong>{totalWins}</strong> / Total Games:{" "}
-//     <strong>{totalGames}</strong>
-//   </p>
-// )}
-
 const Statistic = () => {
   const [stats, setStats] = useState({});
   const { nickname } = useContext(context);

@@ -239,6 +239,11 @@ button:hover {
   pointer-events: none;
 }
 
+.enemies-container {
+  display: flex;
+  gap: 1rem;
+}
+
 .row {
   display: flex;
 }
@@ -366,6 +371,10 @@ button:hover {
 /* Состояние активного выстрела */
 .active-shoot .cell:hover {
   background-color: #ff9800;
+}
+
+.circle-timer-wrap {
+  text-align: center;
 }
 
 /* Отображение имени игроков */

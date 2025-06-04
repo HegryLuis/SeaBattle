@@ -241,15 +241,25 @@ const GamePage = () => {
       timerId.current = null;
     }
 
-    if (payload.globalTurn === turnIndex) {
-      setIsMyTurn(true);
+    let localTime = shotTimer;
+    setDisplayTimer(localTime);
 
-      // Запускаем таймер только при своём ходе
-      let localTime = shotTimer;
+    const isNowMyTurn = payload.globalTurn === turnIndex;
+    setIsMyTurn(isNowMyTurn);
+
+    timerId.current = setInterval(() => {
+      localTime -= 1;
       setDisplayTimer(localTime);
-    } else {
-      setIsMyTurn(false);
-    }
+
+      if (localTime <= 0) {
+        clearInterval(timerId.current);
+        timerId.current = null;
+
+        if (isNowMyTurn) {
+          handleTurnTimeout();
+        }
+      }
+    }, 1000);
   }
 
   function processOrQueue(type, payload) {
@@ -270,24 +280,6 @@ const GamePage = () => {
     if (type === "changeTurn") handleChangeTurn(payload);
     else handleShoot(type, payload);
   }
-
-  useEffect(() => {
-    // Если это мой ход, таймер ещё не запущен, и нет победы/поражения
-    if (isMyTurn && !timerId.current && !victory && !hasLost) {
-      let localTime = shotTimer;
-      setDisplayTimer(localTime);
-
-      timerId.current = setInterval(() => {
-        localTime -= 1;
-        setDisplayTimer(localTime);
-        if (localTime <= 0) {
-          clearInterval(timerId.current);
-          timerId.current = null;
-          handleTurnTimeout();
-        }
-      }, 1000);
-    }
-  }, [isMyTurn, victory, hasLost]);
 
   useEffect(() => {
     return () => {
@@ -355,15 +347,22 @@ const GamePage = () => {
 
         case "loadGame": {
           console.log("LoadGame payload : ", payload);
-          const { players, logs, boards, globalTurn, turnIndex } = payload;
+          const { players, logs, boards, globalTurn } = payload;
 
           const playerIndex = players.findIndex((p) => p.username === nickname);
           console.log("Player index in players array:", playerIndex);
 
           if (playerIndex !== -1) {
             setTurnIndex(playerIndex);
-            setIsMyTurn(globalTurn === playerIndex);
+            setGlobalTurn(globalTurn);
+            const isMyTurnNow = globalTurn === playerIndex;
+
+            setIsMyTurn(isMyTurnNow);
             setIsReadyToHandleTurn(true);
+
+            if (isMyTurnNow) {
+              handleChangeTurn({ globalTurn });
+            }
           } else {
             console.warn("Не удалось найти игрока в списке players");
             setIsMyTurn(false);
@@ -473,46 +472,61 @@ const GamePage = () => {
             canShoot={false}
           />
         </div>
-        <CircleTimer timeLeft={displayTimer} duration={shotTimer} />
-        {enemies.map((enemy) => {
-          const currEnemy = enemies[currentTargetIndex] || null;
-          const isDefeated = defeatedPlayers.includes(enemy.name);
+        <div className="circle-timer-wrap">
+          <p className="anton">{isMyTurn ? "Your turn" : "Opponent's turn"}</p>
+          <CircleTimer timeLeft={displayTimer} duration={shotTimer} />
+        </div>
+        <div
+          className={`enemies-container ${
+            enemies.length >= 2 ? "enemies-more-than-one" : ""
+          }`}
+        >
+          {enemies.map((enemy) => {
+            const currEnemy = enemies[currentTargetIndex] || null;
+            const isDefeated = defeatedPlayers.includes(enemy.name);
 
-          return (
-            <div
-              key={enemy.name}
-              className={`enemy-board ${isDefeated ? "defeated" : ""}`}
-            >
-              <p className="nickname">{enemy.name}</p>
+            return (
+              <div
+                key={enemy.name}
+                className={`enemy-board ${isDefeated ? "defeated" : ""}`}
+              >
+                <p className="nickname">
+                  {currEnemy?.name === enemy.name
+                    ? `${enemy.name} (Current target)`
+                    : enemy.name}
+                </p>
 
-              <BoardComponent
-                board={enemy.board}
-                setBoard={(newBoard) => {
-                  setEnemies((prev) =>
-                    prev.map((e) =>
-                      e.name === enemy.name ? { ...e, board: newBoard } : e
-                    )
-                  );
-                }}
-                canShoot={
-                  isMyTurn &&
-                  currEnemy &&
-                  currEnemy.name === enemy.name &&
-                  !hasLost &&
-                  !isDefeated
-                }
-                shoot={(x, y) => shoot(x, y)}
-              />
-            </div>
-          );
-        })}
+                <BoardComponent
+                  board={enemy.board}
+                  setBoard={(newBoard) => {
+                    setEnemies((prev) =>
+                      prev.map((e) =>
+                        e.name === enemy.name ? { ...e, board: newBoard } : e
+                      )
+                    );
+                  }}
+                  canShoot={
+                    isMyTurn &&
+                    currEnemy &&
+                    currEnemy.name === enemy.name &&
+                    !hasLost &&
+                    !isDefeated
+                  }
+                  shoot={(x, y) => shoot(x, y)}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="stats">
         <div className="stats-wrap">
           <GameState isMyTurn={isMyTurn} victory={victory} />
-          {isMyTurn && !hasLost && !victory && (
-            <p className="turn-timer">Time left: {displayTimer}s</p>
+          {!hasLost && !victory && (
+            <p className="turn-timer">
+              {isMyTurn ? "(Your turn)" : "(Opponent's turn)"}
+            </p>
           )}
           {hasLost && (
             <div className="overlay">

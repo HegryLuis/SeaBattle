@@ -1,3 +1,9 @@
+@media (max-width: 1440px) {
+  .enemies-more-than-one {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 768px) {
   .redact__wrap {
     flex-direction: column;
@@ -13,16 +19,24 @@
   }
 
   .wrap-game {
-    flex-direction: column-reverse;
+    flex-direction: column;
   }
 
   .stats {
     width: 100%;
     text-align: center;
+    position: fixed;
+    bottom: 0;
+    background-color: #0d1117;
+  }
+
+  .stats-wrap {
+    width: 40%;
+    border-right: 1px solid #fff;
   }
 
   .stats button {
-    width: 30%;
+    width: 90%;
     margin: 0 auto;
   }
 
@@ -32,6 +46,7 @@
 
   .boards-wrap {
     flex-direction: column-reverse;
+    margin: 200px;
   }
 
   .game-history-table th,
@@ -72,6 +87,13 @@
     width: 80%;
     margin: 0 auto;
     order: 2;
+  }
+
+  .circle-timer-wrap {
+    position: fixed;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.2);
   }
 }
 

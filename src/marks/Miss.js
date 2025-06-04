@@ -5,6 +5,5 @@ export class Miss extends Mark {
     super(cell);
     this.logo = null;
     this.name = "miss";
-    // this.color = "purple";
   }
 }
