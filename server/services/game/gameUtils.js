@@ -30,8 +30,6 @@ function setTurnTimeout(game, gameID, games) {
 
     if (!currentPlayer || game.lostPlayers.has(currentPlayer.username)) return;
 
-    console.log(`${currentPlayer.username}'s turn is over :( `);
-
     game.players.forEach((player) => {
       player.ws.send(
         JSON.stringify({
@@ -60,11 +58,6 @@ function setTurnTimeout(game, gameID, games) {
         break;
       }
     }
-
-    if (!found) {
-      console.log(`[DEBUG] ${nextPlayer} has no valid targets`);
-    }
-    console.log(`[DEBUG] ${nextPlayer} targets reset to 0`);
 
     game.players.forEach((player) => {
       player.ws.send(

@@ -1,3 +1,4 @@
+const { saveGameProgress } = require("./gameInProgress");
 const { setTurnTimeout } = require("./gameUtils");
 
 function startGame(games, gameID) {
@@ -39,6 +40,20 @@ function startGame(games, gameID) {
   });
 
   game.globalTurn = 0;
+
+  saveGameProgress(
+    gameID,
+    game.players,
+    game.boards,
+    game.logs || [],
+    game.globalTurn,
+    new Set(),
+    game.playerTargets
+  )
+    .then(console.log("Game saved to GameInProgress"))
+    .catch((error) => {
+      console.error("Failed to save game in GameInProgress : ", error);
+    });
 
   setTurnTimeout(game, gameID, games);
 }

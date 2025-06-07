@@ -55,7 +55,7 @@ export const Provider = ({ children }) => {
     // { x: 5, y: 5, size: 3, orientation: "horizontal", color: "red" },
     // { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
     // { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
-    { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
+    // { x: 5, y: 5, size: 2, orientation: "horizontal", color: "purple" },
     { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
     // { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },
     // { x: 5, y: 5, size: 1, orientation: "horizontal", color: "green" },

@@ -7,6 +7,7 @@ import GamePage from "./Pages/GamePage";
 import { Provider } from "./context";
 import AuthPage from "./Pages/AuthPage";
 import ProtectedRoute from "./hoc/ProtectedRoute";
+import WrongPage from "./Pages/WrongPage";
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
                 </ProtectedRoute>
               }
             ></Route>
+
+            <Route path="*" element={<WrongPage />}></Route>
           </Routes>
         </BrowserRouter>
       </div>

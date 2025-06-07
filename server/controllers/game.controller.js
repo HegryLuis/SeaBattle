@@ -35,7 +35,6 @@ function start(PORT) {
             break;
 
           case "loadGame":
-            console.log("Load game");
             gameService.handleLoadGame(wsClient, req.payload, games);
             break;
 

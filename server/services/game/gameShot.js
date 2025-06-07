@@ -1,22 +1,7 @@
 const { checkVictory, checkDefeat } = require("./gameCheck");
 const { endGame } = require("./gameEnd");
-const { saveGameProgress } = require("./gameInProgress");
 const { setTurnTimeout } = require("./gameUtils");
-
-function safeSend(ws, message, username = "<unknown>") {
-  try {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify(message));
-    } else {
-      console.warn(
-        `[${username}] WS не открыт — пропуск сообщения`,
-        message.type
-      );
-    }
-  } catch (err) {
-    console.error(`[${username}] Ошибка при отправке:`, err);
-  }
-}
+const { saveGameProgress } = require("./gameInProgress");
 
 async function processShot(games, { username, x, y, gameID }) {
   const game = games[gameID];
@@ -30,126 +15,104 @@ async function processShot(games, { username, x, y, gameID }) {
   if (game.players[game.globalTurn].username !== username) return;
 
   const playerTargetData = game.playerTargets[username];
+  let target = playerTargetData.opponents[playerTargetData.currentTargetIndex];
 
-  if (
-    playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
-  ) {
-    playerTargetData.currentTargetIndex = 0;
-  }
+  // Пропускаем проигравших противников перед выстрелом
+  while (game.lostPlayers.has(target)) {
+    console.log(` Skipping lost target: ${target}`);
+    playerTargetData.currentTargetIndex++;
 
-  let validTargetFound = false;
-  let attempts = 0;
-  let target = null;
-
-  while (attempts < playerTargetData.opponents.length) {
     if (
       playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
     ) {
+      console.log(`All opponents lost or skipped, moving turn forward.`);
       playerTargetData.currentTargetIndex = 0;
-    }
 
-    const potentialTarget =
-      playerTargetData.opponents[playerTargetData.currentTargetIndex];
+      do {
+        game.globalTurn = (game.globalTurn + 1) % game.players.length;
+      } while (game.lostPlayers.has(game.players[game.globalTurn].username));
 
-    if (!game.lostPlayers.has(potentialTarget)) {
-      target = potentialTarget;
-      validTargetFound = true;
-      break;
-    }
+      game.players.forEach((player) => {
+        player.ws.send(
+          JSON.stringify({
+            type: "changeTurn",
+            payload: { globalTurn: game.globalTurn },
+          })
+        );
+      });
 
-    playerTargetData.currentTargetIndex++;
-    attempts++;
-  }
-
-  if (!validTargetFound) {
-    // Все цели проиграли — передаём ход дальше
-    playerTargetData.currentTargetIndex = 0;
-    do {
-      game.globalTurn = (game.globalTurn + 1) % game.players.length;
-    } while (game.lostPlayers.has(game.players[game.globalTurn].username));
-
-    game.players.forEach((player) => {
-      safeSend(
-        player.ws,
-        {
-          type: "changeTurn",
-          payload: { globalTurn: game.globalTurn },
-        },
-        player.username
+      setTurnTimeout(game, gameID, games);
+      await saveGameProgress(
+        gameID,
+        game.players,
+        game.players.map((p) => ({
+          username: p.username,
+          cells: game.boards[p.username].cells,
+        })),
+        game.logs || [],
+        game.globalTurn ?? 0,
+        game.lostPlayers,
+        game.playerTargets
       );
-      // player.ws.send(
-      //   JSON.stringify({
-      //     type: "changeTurn",
-      //     payload: { globalTurn: game.globalTurn },
-      //   })
-      // );
-    });
 
-    setTurnTimeout(game, gameID, games);
-    return;
+      return;
+    }
+
+    target = playerTargetData.opponents[playerTargetData.currentTargetIndex];
   }
 
   const enemyBoard = game.boards[target];
-  if (!enemyBoard) return;
+  if (!enemyBoard) {
+    console.log(`❌ Enemy board for ${target} not found`);
+    return;
+  }
 
   const cell = enemyBoard.cells[y][x];
   if (!cell) {
-    console.log(`Cell[${y}][${x}] not found`);
+    console.log(`❌ Cell[${y}][${x}] not found`);
     return;
   }
 
   if (cell?.mark?.name === "miss" || cell?.mark?.name === "hit") {
-    console.log("Cell already shot");
+    console.log(`❌ Cell already shot at [${y}][${x}]`);
     return;
   }
 
   const isHit = cell?.mark?.name === "ship";
-  if (!cell.mark) {
-    cell.mark = { name: "empty" };
-  }
+  if (!cell.mark) cell.mark = { name: "empty" };
   cell.mark.name = isHit ? "hit" : "miss";
 
+  console.log(
+    `🎯 Shot by ${username} at ${target} (${x},${y}) → ${
+      isHit ? "HIT" : "MISS"
+    }`
+  );
+
   game.players.forEach((player) => {
-    safeSend(
-      player.ws,
-      {
+    player.ws.send(
+      JSON.stringify({
         type: isHit ? "hit" : "miss",
         payload: { shooter: username, target, x, y },
-      },
-      player.username
+      })
     );
-
-    // player.ws.send(
-    //   JSON.stringify({
-    //     type: isHit ? "hit" : "miss",
-    //     payload: { shooter: username, target, x, y },
-    //   })
-    // );
   });
 
   if (checkDefeat(target, game)) {
-    console.log(`Player ${target} has lost`);
-
+    console.log(`💀 Player ${target} has LOST`);
     const losingPlayer = game.players.find((p) => p.username === target);
     if (losingPlayer) {
-      safeSend(losingPlayer.ws, { type: "youLost" }, losingPlayer.username);
-      // losingPlayer.ws.send(JSON.stringify({ type: "youLost" }));
+      losingPlayer.ws.send(JSON.stringify({ type: "youLost" }));
     }
 
     game.lostPlayers.add(target);
 
     game.players.forEach((player) => {
-      safeSend(player.ws, {
-        type: "playerLost",
-        payload: { username: target },
-      });
-
-      // player.ws.send(
-      //   JSON.stringify({
-      //     type: "playerLost",
-      //     payload: { username: target },
-      //   })
-      // );
+      player.ws.send(
+        JSON.stringify({
+          type: "playerLost",
+          payload: { username: target },
+        })
+      );
     });
 
     const alivePlayers = game.players.filter(
@@ -157,7 +120,6 @@ async function processShot(games, { username, x, y, gameID }) {
     );
     if (alivePlayers.length === 1) {
       const winner = alivePlayers[0].username;
-      console.log(`Victory - ${winner}`);
       endGame(games, gameID, winner);
       return;
     }
@@ -169,30 +131,21 @@ async function processShot(games, { username, x, y, gameID }) {
   }
 
   if (checkDefeat(username, game)) {
-    console.log(`Player ${username} has lost (after shot)`);
-
+    console.log(`💀 Player ${username} has LOST (after shot)`);
     const losingPlayer = game.players.find((p) => p.username === username);
     if (losingPlayer) {
-      safeSend(losingPlayer.ws, { type: "youLost" }, losingPlayer.username);
-
-      // losingPlayer.ws.send(JSON.stringify({ type: "youLost" }));
+      losingPlayer.ws.send(JSON.stringify({ type: "youLost" }));
     }
 
     game.lostPlayers.add(username);
 
     game.players.forEach((player) => {
-      safeSend(
-        player.ws,
-        { type: "playerLost", payload: { username } },
-        player.username
+      player.ws.send(
+        JSON.stringify({
+          type: "playerLost",
+          payload: { username },
+        })
       );
-
-      // player.ws.send(
-      //   JSON.stringify({
-      //     type: "playerLost",
-      //     payload: { username },
-      //   })
-      // );
     });
 
     const alivePlayers = game.players.filter(
@@ -200,7 +153,7 @@ async function processShot(games, { username, x, y, gameID }) {
     );
     if (alivePlayers.length === 1) {
       const winner = alivePlayers[0].username;
-      console.log(`Victory - ${winner}`);
+      console.log(`🏆 Victory - ${winner}`);
       endGame(games, gameID, winner);
       return;
     }
@@ -208,7 +161,18 @@ async function processShot(games, { username, x, y, gameID }) {
     return;
   }
 
+  // Переход к следующей цели
   playerTargetData.currentTargetIndex++;
+
+  // Пропускаем проигравших противников после выстрела
+  while (
+    playerTargetData.currentTargetIndex < playerTargetData.opponents.length &&
+    game.lostPlayers.has(
+      playerTargetData.opponents[playerTargetData.currentTargetIndex]
+    )
+  ) {
+    playerTargetData.currentTargetIndex++;
+  }
 
   if (
     playerTargetData.currentTargetIndex >= playerTargetData.opponents.length
@@ -220,21 +184,14 @@ async function processShot(games, { username, x, y, gameID }) {
     } while (game.lostPlayers.has(game.players[game.globalTurn].username));
 
     game.players.forEach((player) => {
-      safeSend(player.ws, {
-        type: "changeTurn",
-        payload: { globalTurn: game.globalTurn },
-      });
-
-      // player.ws.send(
-      //   JSON.stringify({
-      //     type: "changeTurn",
-      //     payload: { globalTurn: game.globalTurn },
-      //   })
-      // );
+      player.ws.send(
+        JSON.stringify({
+          type: "changeTurn",
+          payload: { globalTurn: game.globalTurn },
+        })
+      );
     });
 
-    setTurnTimeout(game, gameID, games);
-  } else {
     setTurnTimeout(game, gameID, games);
   }
 

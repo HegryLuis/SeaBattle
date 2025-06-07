@@ -52,13 +52,10 @@ async function loadFinishedGame(gameID) {
 
 async function handleLoadGame(ws, payload, games) {
   const { gameID, username } = payload;
-  console.log(`handleLoadGame вызван для ${username} в игре ${gameID}`);
 
   try {
-    // Попытка загрузить игру из активных (в процессе)
     let savedGame = await loadInProgressGame(gameID);
 
-    // Если не нашли в прогрессе — пытаемся загрузить завершённую
     if (!savedGame) {
       savedGame = await loadFinishedGame(gameID);
       if (!savedGame) {
@@ -70,30 +67,27 @@ async function handleLoadGame(ws, payload, games) {
         );
         return;
       }
-      // Игра завершена — можно отправить сообщение или особый тип для клиента
       ws.send(
         JSON.stringify({
           type: "gameFinished",
           payload: savedGame,
         })
       );
-      return; // выходим — восстановление игры из активных не требуется
+      return;
     }
 
-    // Если игра в процессе и её нет в games — восстанавливаем
     if (!games[gameID]) {
       rebuildGameFromSaved(games, savedGame);
     }
 
-    // Присоединяем WebSocket к игроку
+    // WebSocket
     const game = games[gameID];
     const player = game.players.find((p) => p.username === username);
     if (player) {
       player.ws = ws;
-      player.connected = true; // 👈 игрок снова онлайн
-      ws.username = player.username; // 👈 восстанавливаем имя на клиенте
+      player.connected = true;
+      ws.username = player.username;
       ws.playersNum = game.players.length;
-      console.log(`Игрок ${username} переподключился к игре ${gameID}`);
     }
 
     const playerIndex = game.players.findIndex((p) => p.username === username);

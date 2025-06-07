@@ -8,6 +8,7 @@ import { Miss } from "../marks/Miss";
 import CircleTimer from "../Components/CircleTimer";
 import { v4 as uuidv4 } from "uuid";
 import { Board } from "../Models/Board";
+import GameResults from "../Components/GameResults";
 
 const GamePage = () => {
   const {
@@ -48,10 +49,42 @@ const GamePage = () => {
   }, [isMyTurn]);
 
   useEffect(() => {
+    const checkGameID = async () => {
+      try {
+        const res = await fetch("http://localhost:4001/api/activeGamesIDs");
+        const data = await res.json();
+
+        if (!data.gameIDs.includes(gameID)) {
+          navigate("*");
+        } else {
+          console.log("OK");
+        }
+      } catch (error) {
+        console.error("Failed to validate gameID:", error);
+        navigate("*");
+      }
+    };
+
+    checkGameID();
+  }, [gameID]);
+
+  useEffect(() => {
     if (enemies.length > 0 && turnIndex !== undefined) {
       setIsReadyToHandleTurn(true);
     }
   }, [enemies, turnIndex]);
+
+  useEffect(() => {
+    if (enemies.length === 0) {
+      setCurrentTargetIndex(0);
+      return;
+    }
+
+    // Если currentTargetIndex указывает на проигравшего, сдвигаем его
+    if (currentTargetIndex >= enemies.length) {
+      setCurrentTargetIndex(0);
+    }
+  }, [enemies, currentTargetIndex]);
 
   useEffect(() => {
     if (enemies.length > 0 && pendingEvents.current.length > 0) {
@@ -121,7 +154,7 @@ const GamePage = () => {
 
   function shoot(x, y) {
     if (!gameInitialized) {
-      console.log("[shoot] Игра еще не готова");
+      console.log("Game does not ready yet");
       return;
     }
 
@@ -131,7 +164,6 @@ const GamePage = () => {
     if (!currEnemy || defeatedPlayers.includes(currEnemy.name)) return;
 
     if (wss.readyState === WebSocket.OPEN) {
-      console.log("[shoot] After third if-block. Send to back shoot event");
       wss.send(
         JSON.stringify({
           event: "shoot",
@@ -144,7 +176,6 @@ const GamePage = () => {
   }
 
   function handleShoot(type, payload) {
-    console.log("[handleShoot]", { type, payload });
     const { shooter, target, x, y } = payload;
 
     const resultText = type === "hit" ? "Hit" : "Miss";
@@ -269,14 +300,12 @@ const GamePage = () => {
       turnIndex === undefined ||
       globalTurn === undefined
     ) {
-      console.log("⏸ Поставлено в очередь", type);
       pendingEvents.current.push({ type, payload });
       forceUpdate((n) => n + 1);
       setIsReadyToHandleTurn(true);
       return;
     }
 
-    console.log("✅ Обрабатывается немедленно", type);
     if (type === "changeTurn") handleChangeTurn(payload);
     else handleShoot(type, payload);
   }
@@ -304,7 +333,6 @@ const GamePage = () => {
 
     wss.onmessage = function (response) {
       const { type, payload } = JSON.parse(response.data);
-      console.log("[onmessage]", type, payload);
 
       switch (type) {
         case "hit":
@@ -324,14 +352,23 @@ const GamePage = () => {
         case "playerLost": {
           const { username } = payload;
 
+          setDefeatedPlayers((prev) => {
+            const newDefeated = [...prev, username];
+
+            // Обновляем enemies, исключая проигравших
+            setEnemies((prevEnemies) =>
+              prevEnemies.filter((enemy) => !newDefeated.includes(enemy.name))
+            );
+
+            return newDefeated;
+          });
+
           if (username === nickname) {
             setHasLost(true);
             addLogEntry("You have been eliminated.");
           } else {
             addLogEntry(`${username} has been eliminated.`);
           }
-
-          setDefeatedPlayers((prev) => [...prev, username]);
 
           break;
         }
@@ -346,11 +383,9 @@ const GamePage = () => {
           break;
 
         case "loadGame": {
-          console.log("LoadGame payload : ", payload);
           const { players, logs, boards, globalTurn } = payload;
 
           const playerIndex = players.findIndex((p) => p.username === nickname);
-          console.log("Player index in players array:", playerIndex);
 
           if (playerIndex !== -1) {
             setTurnIndex(playerIndex);
@@ -390,9 +425,14 @@ const GamePage = () => {
           } else {
             console.warn("Нет данных доски для игрока:", nickname);
           }
+          const defeatedUsernames = payload.defeatedPlayers || [];
 
           const enemyBoards = players
-            .filter((p) => p.username !== nickname)
+            .filter(
+              (p) =>
+                p.username !== nickname &&
+                !defeatedUsernames.includes(p.username)
+            )
             .map((p) => {
               const board = new Board();
               const data = boardsMap[p.username];
@@ -406,6 +446,7 @@ const GamePage = () => {
             });
 
           setEnemies(enemyBoards);
+          setDefeatedPlayers(defeatedUsernames);
 
           setIsReadyToHandleTurn(true);
           setGameInitialized(true);
@@ -443,10 +484,7 @@ const GamePage = () => {
       return;
     }
 
-    console.log("🔄 flushPendingEvents START", pendingEvents.current);
-
     if (!isReadyToHandleTurn || pendingEvents.current.length === 0) {
-      console.log("🚫 flushPendingEvents: Not ready or empty queue");
       return;
     }
 
@@ -454,107 +492,115 @@ const GamePage = () => {
     pendingEvents.current = [];
 
     queue.forEach(({ type, payload }) => {
-      console.log("✅ flushing event:", type, payload);
       if (type === "changeTurn") handleChangeTurn(payload);
       else handleShoot(type, payload);
     });
   }, [isReadyToHandleTurn]);
 
   return (
-    <div className="wrap wrap-game">
-      <div className="boards-wrap">
-        <div>
-          <p className="nickname">{`${nickname} (You)`}</p>
-          <BoardComponent
-            board={myBoard}
-            setBoard={setMyBoard}
-            isMyBoard
-            canShoot={false}
-          />
-        </div>
-        <div className="circle-timer-wrap">
-          <p className="anton">{isMyTurn ? "Your turn" : "Opponent's turn"}</p>
-          <CircleTimer timeLeft={displayTimer} duration={shotTimer} />
-        </div>
-        <div
-          className={`enemies-container ${
-            enemies.length >= 2 ? "enemies-more-than-one" : ""
-          }`}
-        >
-          {enemies.map((enemy) => {
-            const currEnemy = enemies[currentTargetIndex] || null;
-            const isDefeated = defeatedPlayers.includes(enemy.name);
-
-            return (
-              <div
-                key={enemy.name}
-                className={`enemy-board ${isDefeated ? "defeated" : ""}`}
-              >
-                <p className="nickname">
-                  {currEnemy?.name === enemy.name
-                    ? `${enemy.name} (Current target)`
-                    : enemy.name}
-                </p>
-
-                <BoardComponent
-                  board={enemy.board}
-                  setBoard={(newBoard) => {
-                    setEnemies((prev) =>
-                      prev.map((e) =>
-                        e.name === enemy.name ? { ...e, board: newBoard } : e
-                      )
-                    );
-                  }}
-                  canShoot={
-                    isMyTurn &&
-                    currEnemy &&
-                    currEnemy.name === enemy.name &&
-                    !hasLost &&
-                    !isDefeated
-                  }
-                  shoot={(x, y) => shoot(x, y)}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="stats">
-        <div className="stats-wrap">
-          <GameState isMyTurn={isMyTurn} victory={victory} />
-          {!hasLost && !victory && (
-            <p className="turn-timer">
-              {isMyTurn ? "(Your turn)" : "(Opponent's turn)"}
-            </p>
-          )}
-          {hasLost && (
-            <div className="overlay">
-              <h2>You lost!</h2>
-              <p>Better luck next time!</p>
+    <>
+      {victory === null && !hasLost && (
+        <div className="wrap wrap-game">
+          <div className="boards-wrap">
+            <div>
+              <p className="nickname">{`${nickname} (You)`}</p>
+              <BoardComponent
+                board={myBoard}
+                setBoard={setMyBoard}
+                isMyBoard
+                canShoot={false}
+              />
             </div>
-          )}
+            <div className="circle-timer-wrap">
+              <p className="anton">
+                {isMyTurn ? "Your turn" : "Opponent's turn"}
+              </p>
+              <CircleTimer timeLeft={displayTimer} duration={shotTimer} />
+            </div>
+            <div
+              className={`enemies-container ${
+                enemies.length >= 2 ? "enemies-more-than-one" : ""
+              }`}
+            >
+              {enemies.map((enemy) => {
+                const currEnemy = enemies[currentTargetIndex] || null;
+                const isDefeated = defeatedPlayers.includes(enemy.name);
 
-          <button className="btn-black" onClick={() => navigate("/game")}>
-            Leave the game
-          </button>
+                return (
+                  <div
+                    key={enemy.name}
+                    className={`enemy-board ${isDefeated ? "defeated" : ""}`}
+                  >
+                    <p className="nickname">
+                      {currEnemy?.name === enemy.name
+                        ? `${enemy.name} (Current target)`
+                        : enemy.name}
+                    </p>
+
+                    <BoardComponent
+                      board={enemy.board}
+                      setBoard={(newBoard) => {
+                        setEnemies((prev) =>
+                          prev.map((e) =>
+                            e.name === enemy.name
+                              ? { ...e, board: newBoard }
+                              : e
+                          )
+                        );
+                      }}
+                      canShoot={
+                        isMyTurn &&
+                        currEnemy &&
+                        currEnemy.name === enemy.name &&
+                        !hasLost &&
+                        !isDefeated
+                      }
+                      shoot={(x, y) => shoot(x, y)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="stats">
+            <div className="stats-wrap">
+              <GameState isMyTurn={isMyTurn} victory={victory} />
+              {!hasLost && !victory && (
+                <p className="turn-timer">
+                  {isMyTurn ? "(Your turn)" : "(Opponent's turn)"}
+                </p>
+              )}
+              {hasLost && (
+                <div className="overlay">
+                  <h2>You lost!</h2>
+                  <p>Better luck next time!</p>
+                </div>
+              )}
+
+              <button className="btn-black" onClick={() => navigate("/game")}>
+                Leave the game
+              </button>
+            </div>
+
+            <div className="battle-log">
+              <h3 className="anton">Battle Log</h3>
+              <ul>
+                {battleLog.map((log) => (
+                  <li className="anton" key={log.id}>
+                    {log.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="battle-log">
-          <h3 className="anton">Battle Log</h3>
-
-          <ul>
-            {battleLog.map((log) => {
-              return (
-                <li className="anton" key={log.id}>
-                  {log.message}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-    </div>
+      {(victory !== null || hasLost) && (
+        <GameResults result={victory === nickname ? "win" : "lose"} />
+      )}
+    </>
   );
 };
 

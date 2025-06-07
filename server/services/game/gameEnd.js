@@ -6,6 +6,11 @@ const { deleteGameProgress } = require("./gameInProgress");
 async function endGame(games, gameID, winner) {
   const game = games[gameID];
 
+  if (!game) {
+    console.warn(`endGame: game ${gameID} is over or does not exist`);
+    return;
+  }
+
   if (game.currentTurnTimer) {
     clearTimeout(game.currentTurnTimer);
   }
